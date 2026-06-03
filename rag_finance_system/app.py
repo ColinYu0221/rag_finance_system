@@ -12,7 +12,7 @@ from pathlib import Path
 import streamlit as st
 import os
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # ===== 页面配置 =====
 st.set_page_config(
@@ -32,6 +32,7 @@ def load_components(use_reranker: bool = True, use_api: bool = False):
     from rag_finance_system.src.retriever import Retriever
     from rag_finance_system.src.llm import get_llm
     from rag_finance_system.src.rag_chain import RAGChain
+    from rag_finance_system.src.rewriter import QueryRewriter
 
     embedder = Embedder()
     vector_store = VectorStore()
@@ -43,9 +44,20 @@ def load_components(use_reranker: bool = True, use_api: bool = False):
         except Exception as e:
             st.warning(f"Reranker加载失败: {e}")
 
+    # 查询重写小模型（优先加载微调权重，失败回退大模型）
+    rewriter = None
+    try:
+        lora_path = str(Path(__file__).resolve().parent.parent.parent / "checkpoints" / "rewriter_lora" / "final")
+        if Path(lora_path).exists():
+            rewriter = QueryRewriter(model_path="Qwen/Qwen2.5-0.5B-Instruct", lora_path=lora_path)
+        else:
+            rewriter = QueryRewriter()
+    except Exception as e:
+        st.warning(f"查询重写小模型加载失败: {e}，将使用主LLM重写")
+
     llm = get_llm(prefer_local=not use_api)
     retriever = Retriever(embedder=embedder, vector_store=vector_store, reranker=reranker)
-    rag = RAGChain(retriever=retriever, llm=llm)
+    rag = RAGChain(retriever=retriever, llm=llm, rewriter=rewriter)
     processor = DocumentProcessor()
 
     return {
@@ -64,12 +76,14 @@ with st.sidebar:
                         help="显存不足时开启，需要在.env配置DASHSCOPE_API_KEY")
     use_reranker = st.toggle("启用Reranker精排", value=True,
                              help="提升检索精度，需额外~1.1GB显存")
+    use_query_rewrite = st.toggle("启用查询重写", value=True,
+                                  help="将用户问题改写为更适合向量检索的查询，提高检索召回效果")
 
     mode = st.selectbox(
         "检索模式",
-        ["法条+案例", "仅法条", "仅案例"],
+        ["全部", "仅法条", "仅案例", "仅其他"],
         index=0,
-        help="选择本次问答检索范围：全部/仅法规/仅案例",
+        help="选择本次问答检索范围：全部/仅法规/仅案例/仅其他资料",
     )
 
     st.divider()
@@ -86,6 +100,37 @@ with st.sidebar:
         type=["pdf","txt"],
         help="支持中文PDF或纯文本TXT，最大200MB"
     )
+
+    other_file = st.file_uploader(
+        "上传其它参考资料",
+        type=["pdf","txt"],
+        help="支持PDF或TXT，如学术文献、研究报告、政策解读等，最大200MB"
+    )
+
+    if other_file:
+        if st.button("解析资料并建立索引", type="secondary", key="other_btn"):
+
+            save_path = Path("data/raw/other") / other_file.name
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(save_path, "wb") as f:
+                f.write(other_file.getvalue())
+
+            with st.spinner(f"正在解析资料 {other_file.name}..."):
+                comps = load_components(use_reranker, use_api)
+
+                chunks = comps["processor"].process_file(str(save_path), doc_type="other")
+
+                for c in chunks:
+                    c["source"] = c.get("source", other_file.name)
+
+                texts = [c["text"] for c in chunks]
+
+                embeddings = comps["embedder"].encode_documents(texts)
+
+                comps["vector_store"].insert(chunks, embeddings)
+
+                st.success(f"✅ 资料入库完成：{len(chunks)} 条")
 
     if case_file:
         if st.button("解析案例并建立索引", type="secondary", key="case_btn"):
@@ -143,6 +188,31 @@ with st.sidebar:
                 st.success(f"✅ 索引建立完成！共 {len(chunks)} 个知识片段")
 
     st.divider()
+    st.subheader("批量导入")
+    if st.button("一键导入 testfiles 中的 148 份其它资料", type="secondary", key="batch_import"):
+        import glob as _glob
+        _txt_dir = Path("data/testfiles")
+        _txt_files = sorted(_glob.glob(str(_txt_dir / "**" / "*.txt"), recursive=True))
+        if not _txt_files:
+            st.warning("未找到 .txt 文件，请先运行 tools/convert_testfiles.py 转换")
+        else:
+            comps = load_components(use_reranker, use_api)
+            progress = st.progress(0, text=f"0/{len(_txt_files)}")
+            total_chunks = 0
+            for i, fp in enumerate(_txt_files):
+                try:
+                    chunks = comps["processor"].process_file(fp, doc_type="other")
+                    texts = [c["text"] for c in chunks]
+                    embeddings = comps["embedder"].encode_documents(texts)
+                    comps["vector_store"].insert(chunks, embeddings)
+                    total_chunks += len(chunks)
+                except Exception as e:
+                    st.warning(f"跳过 {Path(fp).name}: {e}")
+                progress.progress((i + 1) / len(_txt_files),
+                                  text=f"{i + 1}/{len(_txt_files)}  ({total_chunks} chunks)")
+            st.success(f"✅ 批量导入完成！{len(_txt_files)} 个文件，共 {total_chunks} 个 chunk")
+
+    st.divider()
     st.caption("Phase 1 最小闭环版本\n向量检索 + Reranker + Qwen2.5")
 
 
@@ -196,13 +266,22 @@ if question := st.chat_input("请输入您的金融法规问题..."):
                     doc_type_filter = "law"
                 elif mode == "仅案例":
                     doc_type_filter = "case"
-                result = comps["rag"].query(question, doc_type_filter=doc_type_filter)
+                elif mode == "仅其他":
+                    doc_type_filter = "other"
+                result = comps["rag"].query(
+                    question,
+                    doc_type_filter=doc_type_filter,
+                    use_query_rewrite=use_query_rewrite,
+                )
 
                 answer = result["answer"]
                 sources = result["sources"]
                 confidence = result["confidence"]
+                rewritten_query = result.get("rewritten_query", question)
 
                 st.markdown(answer)
+                if rewritten_query and rewritten_query != question:
+                    st.caption(f"已改写查询：{rewritten_query}")
 
                 # 溯源展示
                 if sources:

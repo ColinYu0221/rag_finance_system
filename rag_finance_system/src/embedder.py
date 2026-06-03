@@ -105,7 +105,8 @@ class Reranker:
         ).to(self.device)
 
         with torch.no_grad():
-            scores = self.model(**inputs).logits.squeeze(-1)
+            logits = self.model(**inputs).logits.squeeze(-1)
+            scores = torch.sigmoid(logits)
 
         scores = scores.cpu().tolist()
 

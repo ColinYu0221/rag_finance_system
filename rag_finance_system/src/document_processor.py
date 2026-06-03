@@ -67,7 +67,70 @@ class RecursiveCharacterTextSplitter:
 
         return final_chunks
 
-    # ===================== 新增：按条切分 =====================
+    def split_text_for_other(self, text: str) -> list[str]:
+        """其它资料切分：第X条 → 中文序号 → 递归，三级优先级尝试。"""
+        text = text.strip()
+        if not text:
+            return []
+
+        # 1. 先尝试"第X条"切分（管理办法/实施细则类）
+        articles = self._split_by_article(text)
+        if len(articles) > 1:
+            return self._section_chunks(articles)
+
+        # 2. 尝试按中文序号切分（通知/指导意见类：一、二、三、...）
+        numbered = self._split_by_chinese_numbers(text)
+        if len(numbered) > 1:
+            return self._section_chunks(numbered)
+
+        # 3. 兜底：纯递归切分（公告/模板类）
+        return self._split_recursive(text)
+
+    def _section_chunks(self, sections: list[str]) -> list[str]:
+        """每个结构段落内部独立切分+合并，避免跨段落拼接。"""
+        final: list[str] = []
+        for sec in sections:
+            sec = sec.strip()
+            if not sec:
+                continue
+            if len(sec) <= self.chunk_size:
+                final.append(sec)
+            else:
+                sub = self._split_recursive(sec)
+                sub = self._merge_chunks(sub)
+                final.extend(sub)
+        return final
+
+    def _split_by_chinese_numbers(self, text: str) -> list[str]:
+        """按中文序号（一、二、三、... 或（一）（二）...）切分全文。"""
+        # 匹配行首中文数字 + 标点：一、 二、 （一） (一) 十二、
+        pattern = re.compile(
+            r"(?:^|\n)\s*"
+            r"(?:（\s*[一二三四五六七八九十]+\s*）|\(\s*[一二三四五六七八九十]+\s*\))"
+            r"|"
+            r"(?:^|\n)\s*[一二三四五六七八九十]+(?:[一二三四五六七八九十])?\s*[、.．]",
+            re.MULTILINE,
+        )
+        matches = list(pattern.finditer(text))
+        if len(matches) < 2:
+            return [text]
+
+        sections = []
+        if matches[0].start() > 0:
+            preamble = text[:matches[0].start()].strip()
+            if preamble:
+                sections.append(preamble)
+
+        for i, m in enumerate(matches):
+            start = m.start()
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            part = text[start:end].strip()
+            if part:
+                sections.append(part)
+
+        return sections
+
+    # ===================== 按条切分 =====================
     def _split_by_article(self, text: str) -> list[str]:
         """按“第XX条”切分，保留条头"""
         pattern = r"(第[零一二三四五六七八九十百千万\d]+条[^第]*)"
@@ -215,12 +278,21 @@ class DocumentProcessor:
         每个chunk包含：text, source, chunk_id, article_num(条文号，如有), doc_type
         """
         full_text = doc_info["full_text"]
-        chunks_text = self.splitter.split_text(full_text)
+
+        if doc_type == "case":
+            chunks_text = self.splitter.split_text(full_text)
+        elif doc_type == "other":
+            chunks_text = self.splitter.split_text_for_other(full_text)
+        else:
+            chunks_text = self.splitter.split_text(full_text)
 
         chunks = []
         for idx, chunk_text in enumerate(chunks_text):
             article_match = re.search(r"第[零一二三四五六七八九十百\d]+条", chunk_text)
             article_num = article_match.group(0) if article_match else ""
+
+            law_name = self._extract_law_name(doc_info["title"], doc_type)
+            authority = self._extract_authority(doc_info["title"], doc_info.get("file_path", ""))
 
             chunks.append({
                 "chunk_id": f"{doc_info['title']}_chunk_{idx:04d}",
@@ -230,10 +302,48 @@ class DocumentProcessor:
                 "article_num": article_num,
                 "chunk_index": idx,
                 "doc_type": doc_type,
+                "law_name": law_name,
+                "authority": authority,
             })
 
         logger.info(f"文档 [{doc_info['title']}] 分段完成，共 {len(chunks)} 个chunk")
-        return chunks
+    def _extract_law_name(self, title: str, doc_type: str) -> str:
+        """
+        从文件名提取法律名称。
+        "中华人民共和国公司法_20131228" → "中华人民共和国公司法"
+        案例和其它资料返回原始 title。
+        """
+        if doc_type != "law":
+            return title
+        # 去掉末尾的 _日期 后缀（如 _20131228、_20250424）
+        cleaned = re.sub(r"_\d{8}$", "", title)
+        return cleaned or title
+
+    def _extract_authority(self, title: str, file_path: str) -> str:
+        """
+        从文件名或路径提取发布机构。
+        "上海银保监局关于印发《...》的通知"  →  "上海银保监局"
+        "中国银保监会南通监管分局关于..."    →  "南通监管分局"
+        无明确机构时从目录路径推断，兜底返回空字符串。
+        """
+        # 策略一：取"关于"之前的文本作为机构名
+        for kw in ["关于", "办公室关于"]:
+            if kw in title:
+                prefix = title.split(kw)[0].strip()
+                # 清理常见前缀/后缀
+                prefix = re.sub(r"^(国家金融监督管理总局|中国银保监会|中国保监会|中国银监会)", "", prefix)
+                prefix = re.sub(r"(办公室|秘书处)$", "", prefix)
+                if len(prefix) >= 4:
+                    return prefix
+
+        # 策略二：从目录路径推断（如 "金融监督管理局/上海监管局/..."）
+        if file_path:
+            path_parts = file_path.replace("\\", "/").split("/")
+            for i, part in enumerate(path_parts):
+                if part.endswith("监管局") or part.endswith("监管分局"):
+                    return part
+
+        return ""
 
     def process_pdf(self, pdf_path: str, doc_type: str = "law") -> List[Dict[str, Any]]:
         doc_info = self.extract_text_from_pdf(pdf_path)

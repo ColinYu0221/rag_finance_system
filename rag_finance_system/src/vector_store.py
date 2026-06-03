@@ -49,6 +49,8 @@ class VectorStore:
                     "file_path": chunk.get("file_path", ""),
                     "chunk_index": chunk.get("chunk_index", 0),
                     "doc_type": chunk.get("doc_type", "law"),
+                    "law_name": chunk.get("law_name", ""),
+                    "authority": chunk.get("authority", ""),
                 })
 
             self.collection.add(
@@ -70,6 +72,8 @@ class VectorStore:
         top_k: int = 10,
         source_filter: Optional[str] = None,
         doc_type_filter: Optional[str] = None,
+        law_name_filter: Optional[str] = None,
+        authority_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
 
         where = {}
@@ -77,6 +81,10 @@ class VectorStore:
             where["source"] = source_filter
         if doc_type_filter:
             where["doc_type"] = doc_type_filter
+        if law_name_filter:
+            where["law_name"] = law_name_filter
+        if authority_filter:
+            where["authority"] = authority_filter
         if not where:
             where = None
 
@@ -90,7 +98,7 @@ class VectorStore:
         for i in range(len(results["ids"][0])):
             hits.append({
                 "id": results["ids"][0][i],
-                "score": 1 - results["distances"][0][i],
+                "score": 1 - results["distances"][0][i] / 4,
                 "text": results["documents"][0][i],
                 **results["metadatas"][0][i],
             })
