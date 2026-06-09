@@ -5,6 +5,7 @@ Streamlit 前端 — 金融制度 RAG 问答系统
 """
 
 import os
+import time
 import requests
 import streamlit as st
 from requests.exceptions import ConnectionError, Timeout, RequestException
@@ -161,58 +162,79 @@ with st.sidebar:
     st.subheader("文档管理")
 
     # ── 上传法条 ──
-    law_file = st.file_uploader(
-        "上传金融法规 PDF 或 TXT",
+    law_files = st.file_uploader(
+        "上传金融法规 PDF 或 TXT（可多选）",
         type=["pdf", "txt"],
+        accept_multiple_files=True,
         key="law_uploader",
-        help="支持中文 PDF 或纯文本 TXT，最大 200MB",
+        help="支持中文 PDF 或纯文本 TXT，最大 200MB，可批量选择多个文件",
     )
-    if law_file:
+    if law_files:
         if st.button("解析法条并建立索引", type="primary", key="law_btn", disabled=not st.session_state.api_ok):
-            try:
-                with st.spinner(f"正在上传 {law_file.name}..."):
-                    up = upload_file(api_base, law_file.getvalue(), law_file.name, "law")
-                with st.spinner("正在建立索引..."):
+            total = 0
+            errors = 0
+            progress = st.progress(0, text=f"0/{len(law_files)}")
+            for i, f in enumerate(law_files):
+                try:
+                    up = upload_file(api_base, f.getvalue(), f.name, "law")
                     ix = index_file(api_base, up["file_path"], "law")
-                st.success(f"✅ 法条入库完成：{ix['chunk_count']} 条")
-            except RequestException as e:
-                st.error(_handle_api_error(e))
+                    total += ix["chunk_count"]
+                    time.sleep(1)  # 避免 milvus-lite 文件锁冲突
+                except RequestException as e:
+                    st.warning(f"跳过 {f.name}: {_handle_api_error(e)}")
+                    errors += 1
+                progress.progress((i + 1) / len(law_files), text=f"{i + 1}/{len(law_files)}  ({total} chunks)")
+            st.success(f"✅ 法条入库完成：{len(law_files) - errors} 个文件，{total} 条")
 
     # ── 上传案例 ──
-    case_file = st.file_uploader(
-        "上传案例文件",
+    case_files = st.file_uploader(
+        "上传案例文件（可多选）",
         type=["pdf", "txt"],
+        accept_multiple_files=True,
         key="case_uploader",
-        help="支持裁判文书 PDF 或纯文本 TXT，最大 200MB",
+        help="支持裁判文书 PDF 或纯文本 TXT，最大 200MB，可批量选择多个文件",
     )
-    if case_file:
+    if case_files:
         if st.button("解析案例并建立索引", type="primary", key="case_btn", disabled=not st.session_state.api_ok):
-            try:
-                with st.spinner(f"正在上传 {case_file.name}..."):
-                    up = upload_file(api_base, case_file.getvalue(), case_file.name, "case")
-                with st.spinner("正在建立索引..."):
+            total = 0
+            errors = 0
+            progress = st.progress(0, text=f"0/{len(case_files)}")
+            for i, f in enumerate(case_files):
+                try:
+                    up = upload_file(api_base, f.getvalue(), f.name, "case")
                     ix = index_file(api_base, up["file_path"], "case")
-                st.success(f"✅ 案例入库完成：{ix['chunk_count']} 条")
-            except RequestException as e:
-                st.error(_handle_api_error(e))
+                    total += ix["chunk_count"]
+                    time.sleep(1)  # 避免 milvus-lite 文件锁冲突
+                except RequestException as e:
+                    st.warning(f"跳过 {f.name}: {_handle_api_error(e)}")
+                    errors += 1
+                progress.progress((i + 1) / len(case_files), text=f"{i + 1}/{len(case_files)}  ({total} chunks)")
+            st.success(f"✅ 案例入库完成：{len(case_files) - errors} 个文件，{total} 条")
 
     # ── 上传其他资料 ──
-    other_file = st.file_uploader(
-        "上传其他参考资料",
+    other_files = st.file_uploader(
+        "上传其他参考资料（可多选）",
         type=["pdf", "txt"],
+        accept_multiple_files=True,
         key="other_uploader",
-        help="支持 PDF 或 TXT，如学术文献、研究报告、政策解读等，最大 200MB",
+        help="支持 PDF 或 TXT，如学术文献、研究报告、政策解读等，最大 200MB，可批量选择多个文件",
     )
-    if other_file:
+    if other_files:
         if st.button("解析资料并建立索引", type="primary", key="other_btn", disabled=not st.session_state.api_ok):
-            try:
-                with st.spinner(f"正在上传 {other_file.name}..."):
-                    up = upload_file(api_base, other_file.getvalue(), other_file.name, "other")
-                with st.spinner("正在建立索引..."):
+            total = 0
+            errors = 0
+            progress = st.progress(0, text=f"0/{len(other_files)}")
+            for i, f in enumerate(other_files):
+                try:
+                    up = upload_file(api_base, f.getvalue(), f.name, "other")
                     ix = index_file(api_base, up["file_path"], "other")
-                st.success(f"✅ 资料入库完成：{ix['chunk_count']} 条")
-            except RequestException as e:
-                st.error(_handle_api_error(e))
+                    total += ix["chunk_count"]
+                    time.sleep(1)  # 避免 milvus-lite 文件锁冲突
+                except RequestException as e:
+                    st.warning(f"跳过 {f.name}: {_handle_api_error(e)}")
+                    errors += 1
+                progress.progress((i + 1) / len(other_files), text=f"{i + 1}/{len(other_files)}  ({total} chunks)")
+            st.success(f"✅ 资料入库完成：{len(other_files) - errors} 个文件，{total} 条")
 
     st.divider()
     st.subheader("批量导入")

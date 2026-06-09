@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 from pathlib import Path as _StdPath
 from typing import List, Dict, Any, Optional
@@ -208,6 +209,39 @@ class VectorStore:
             return round((raw_score + 1.0) / 2.0, 4)
         return round(max(0.0, min(1.0, 1.0 - raw_score / 2.0)), 4)
 
+    @staticmethod
+    def _retry_operation(op, *args, max_retries: int = 5, operation_name: str = ""):
+        """带退避的重试，处理 milvus-lite 在 Windows 下的文件锁冲突。"""
+        last_exc = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                return op(*args)
+            except Exception as e:
+                last_exc = e
+                if attempt < max_retries:
+                    wait = 0.5 * (2 ** attempt)  # 1s, 2s, 4s, 8s
+                    logger.warning(f"Milvus {operation_name} 失败 (attempt {attempt}/{max_retries})，"
+                                   f"{wait:.1f}s 后重试: {e}")
+                    time.sleep(wait)
+        raise last_exc
+
+    def _insert_batch(self, data: list):
+        """带重试的单批插入。"""
+        return self._retry_operation(
+            self.client.insert,
+            collection_name=self.collection_name,
+            data=data,
+            operation_name="insert",
+        )
+
+    def _flush_with_retry(self):
+        """带重试的 flush。"""
+        return self._retry_operation(
+            self.client.flush,
+            self.collection_name,
+            operation_name="flush",
+        )
+
     def insert(
         self,
         chunks: List[Dict[str, Any]],
@@ -243,11 +277,11 @@ class VectorStore:
                     "authority": self._clean_text(chunk.get("authority", ""), 512),
                 })
 
-            self.client.insert(collection_name=self.collection_name, data=data)
+            self._insert_batch(data=data)
             inserted += len(batch_chunks)
             logger.info(f"已插入 {inserted}/{total}")
 
-        self.client.flush(self.collection_name)
+        self._flush_with_retry()
         self.client.load_collection(self.collection_name)
         return inserted
 
