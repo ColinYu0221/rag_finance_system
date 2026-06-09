@@ -14,7 +14,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from loguru import logger
 
-load_dotenv()
+# api_app.py 在 rag_finance_system/ 下，同级 .env
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 

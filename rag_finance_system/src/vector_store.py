@@ -1,5 +1,6 @@
 import os
 import uuid
+from pathlib import Path as _StdPath
 from typing import List, Dict, Any, Optional
 
 from dotenv import load_dotenv
@@ -12,7 +13,10 @@ from pymilvus import (
 )
 from pymilvus.milvus_client.index import IndexParams
 
-load_dotenv()
+# src/vector_store.py → rag_finance_system/.env
+# 注意：不要设置 MILVUS_URI 环境变量，pymilvus 导入时会自动解析它。
+# 使用 MILVUS_LOCAL_DB 作为本地 .db 文件路径（仅 MilvusClient 读取）。
+load_dotenv(dotenv_path=str(_StdPath(__file__).resolve().parent.parent / ".env"))
 
 COLLECTION_NAME = os.getenv("MILVUS_COLLECTION_NAME", "finance_regulations")
 DEFAULT_TEXT_MAX_LENGTH = 4096
@@ -21,7 +25,7 @@ DEFAULT_TEXT_MAX_LENGTH = 4096
 class VectorStore:
     def __init__(self):
         self.collection_name = COLLECTION_NAME
-        uri = os.getenv("MILVUS_URI", "")
+        local_db = os.getenv("MILVUS_LOCAL_DB", "")
         host = os.getenv("MILVUS_HOST", "127.0.0.1")
         port = os.getenv("MILVUS_PORT", "19530")
         user = os.getenv("MILVUS_USER", "")
@@ -30,7 +34,10 @@ class VectorStore:
         self.embed_dim = self._read_embed_dim()
         self._index_type: Optional[str] = None
 
-        if not uri:
+        # .db 本地文件 → POSIX 绝对路径；否则用 HTTP 连接
+        if local_db:
+            uri = _StdPath(local_db).resolve().as_posix()
+        else:
             uri = f"http://{host}:{port}"
 
         self.client = self._connect(uri, user, password, db_name)

@@ -160,35 +160,57 @@ with st.sidebar:
     st.divider()
     st.subheader("文档管理")
 
-    doc_type_label = st.selectbox(
-        "文档类型",
-        ["法规 (law)", "案例 (case)", "其他 (other)"],
-        index=0,
-        help="选择上传文件对应的类型",
-    )
-    doc_type_map = {"法规 (law)": "law", "案例 (case)": "case", "其他 (other)": "other"}
-    doc_type = doc_type_map[doc_type_label]
-
-    uploaded_file = st.file_uploader(
+    # ── 上传法条 ──
+    law_file = st.file_uploader(
         "上传金融法规 PDF 或 TXT",
         type=["pdf", "txt"],
+        key="law_uploader",
         help="支持中文 PDF 或纯文本 TXT，最大 200MB",
     )
-
-    if uploaded_file:
-        if st.button("解析并建立索引", type="primary", disabled=not st.session_state.api_ok):
+    if law_file:
+        if st.button("解析法条并建立索引", type="primary", key="law_btn", disabled=not st.session_state.api_ok):
             try:
-                with st.spinner("正在上传文件..."):
-                    upload_resp = upload_file(
-                        api_base,
-                        uploaded_file.getvalue(),
-                        uploaded_file.name,
-                        doc_type,
-                    )
-                file_path = upload_resp["file_path"]
-                with st.spinner("正在建立索引（大文件需数分钟）..."):
-                    index_resp = index_file(api_base, file_path, doc_type)
-                st.success(f"索引建立完成！共 {index_resp['chunk_count']} 个知识片段")
+                with st.spinner(f"正在上传 {law_file.name}..."):
+                    up = upload_file(api_base, law_file.getvalue(), law_file.name, "law")
+                with st.spinner("正在建立索引..."):
+                    ix = index_file(api_base, up["file_path"], "law")
+                st.success(f"✅ 法条入库完成：{ix['chunk_count']} 条")
+            except RequestException as e:
+                st.error(_handle_api_error(e))
+
+    # ── 上传案例 ──
+    case_file = st.file_uploader(
+        "上传案例文件",
+        type=["pdf", "txt"],
+        key="case_uploader",
+        help="支持裁判文书 PDF 或纯文本 TXT，最大 200MB",
+    )
+    if case_file:
+        if st.button("解析案例并建立索引", type="primary", key="case_btn", disabled=not st.session_state.api_ok):
+            try:
+                with st.spinner(f"正在上传 {case_file.name}..."):
+                    up = upload_file(api_base, case_file.getvalue(), case_file.name, "case")
+                with st.spinner("正在建立索引..."):
+                    ix = index_file(api_base, up["file_path"], "case")
+                st.success(f"✅ 案例入库完成：{ix['chunk_count']} 条")
+            except RequestException as e:
+                st.error(_handle_api_error(e))
+
+    # ── 上传其他资料 ──
+    other_file = st.file_uploader(
+        "上传其他参考资料",
+        type=["pdf", "txt"],
+        key="other_uploader",
+        help="支持 PDF 或 TXT，如学术文献、研究报告、政策解读等，最大 200MB",
+    )
+    if other_file:
+        if st.button("解析资料并建立索引", type="primary", key="other_btn", disabled=not st.session_state.api_ok):
+            try:
+                with st.spinner(f"正在上传 {other_file.name}..."):
+                    up = upload_file(api_base, other_file.getvalue(), other_file.name, "other")
+                with st.spinner("正在建立索引..."):
+                    ix = index_file(api_base, up["file_path"], "other")
+                st.success(f"✅ 资料入库完成：{ix['chunk_count']} 条")
             except RequestException as e:
                 st.error(_handle_api_error(e))
 
