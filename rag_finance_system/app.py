@@ -4,6 +4,7 @@ Streamlit 前端 — 金融制度 RAG 问答系统
 纯 HTTP 客户端，所有后端调用走 FastAPI。
 """
 
+import json
 import os
 import time
 import requests
@@ -302,39 +303,75 @@ if question := st.chat_input(
     st.session_state.messages.append({"role": "user", "content": question})
 
     with st.chat_message("assistant"):
-        result = None
-        with st.spinner("检索相关条文并生成答案..."):
-            try:
-                result = ask_question(
-                    api_base,
-                    question,
-                    doc_type_filter,
-                    use_reranker,
-                    use_query_rewrite,
-                )
-            except RequestException as e:
-                err_msg = _handle_api_error(e)
-                st.error(err_msg)
-                st.session_state.messages.append({"role": "assistant", "content": err_msg})
+        answer = ""
+        rewritten = ""
+        sources = []
+        confidence = {}
 
-        if result is not None:
-            answer = result["answer"]
-            rewritten = result.get("rewritten_query")
-            sources = result.get("sources", [])
-            confidence = result.get("confidence", {})
+        try:
+            # 流式 SSE 请求
+            payload: dict = {
+                "question": question,
+                "use_reranker": use_reranker,
+                "use_query_rewrite": use_query_rewrite,
+            }
+            if doc_type_filter:
+                payload["doc_type_filter"] = doc_type_filter
 
-            st.markdown(answer)
+            response = requests.post(
+                f"{api_base}/api/qa/stream",
+                json=payload,
+                timeout=180,
+                stream=True,
+            )
+            response.raise_for_status()
+
+            answer_box = st.empty()
+            meta_displayed = False
+            for raw_line in response.iter_lines(decode_unicode=True):
+                if not raw_line or raw_line.startswith("data: [DONE]"):
+                    continue
+
+                line = raw_line
+                if line.startswith("data: "):
+                    line = line[6:]
+
+                try:
+                    event = json.loads(line)
+                except Exception:
+                    continue
+
+                if event.get("type") == "meta":
+                    rewritten = event.get("rewritten_query", "") or ""
+                    sources = event.get("sources", [])
+                    meta_displayed = True
+                elif event.get("type") == "token":
+                    answer += event.get("text", "")
+                    answer_box.markdown(answer + "▌")
+                elif event.get("type") == "done":
+                    confidence = event.get("confidence", {})
+                    break
+                elif event.get("type") == "error":
+                    answer = f"出错了: {event.get('message', '')}"
+                    break
+
+            answer_box.markdown(answer)
             if rewritten and rewritten != question:
                 st.caption(f"已改写查询：{rewritten}")
             render_sources(sources)
             if confidence:
                 render_confidence(confidence)
 
-            st.session_state.messages.append({
-                "role": "assistant",
-                "content": answer,
-                "question": question,
-                "rewritten_query": rewritten,
-                "sources": sources,
-                "confidence": confidence,
-            })
+        except RequestException as e:
+            err_msg = _handle_api_error(e)
+            st.error(err_msg)
+            answer = err_msg
+
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": answer,
+            "question": question,
+            "rewritten_query": rewritten,
+            "sources": sources,
+            "confidence": confidence,
+        })

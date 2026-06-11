@@ -442,3 +442,109 @@ class RAGChain:
             "confidence": confidence,
             "rewritten_query": rewritten_query,
         }
+
+    def query_stream(
+        self,
+        question: str,
+        top_k: Optional[int] = None,
+        use_reranker: bool = True,
+        use_query_rewrite: bool = True,
+        use_query_expansion: bool = True,
+        source_filter: Optional[str] = None,
+        doc_type_filter: Optional[str] = None,
+        max_new_tokens: int = 1024,
+    ):
+        """流式问答：检索后逐 token 生成，同时收集完整回答用于溯源。
+
+        Yields:
+            每行 JSON: {"type": "token"|"meta"|"done", ...}
+        """
+        import json as _json
+
+        # 0-3: 检索（与 query() 相同）
+        logger.info(f"流式问答请求: {question[:60]}...")
+
+        law_name_filter = None
+        authority_filter = None
+        expanded_query = question
+        entities: dict[str, list[str]] = {"terms": [], "law_names": [], "authorities": []}
+
+        if self.dictionary:
+            entities = self.dictionary.detect_entities(question)
+            if entities["law_names"]:
+                law_name_filter = entities["law_names"][0]
+            if entities["authorities"]:
+                authority_filter = ",".join(entities["authorities"])
+            if use_query_expansion and entities["terms"]:
+                expanded_query = self.dictionary.expand_query(question)
+
+        source_filter = self._detect_source(question)
+        if source_filter:
+            law_name_filter = None
+            authority_filter = None
+        else:
+            if not law_name_filter:
+                law_name_filter = self._detect_law_name(question)
+            if not authority_filter:
+                authority_filter = self._detect_authority(question)
+
+        rewritten_query = expanded_query
+        if use_query_rewrite:
+            rewritten_query = self.rewrite_query(expanded_query)
+
+        # 知识图谱
+        graph_articles: list[dict] = []
+        graph_facts: list[str] = []
+        if self.kg and self.kg._connected:
+            try:
+                authority_list = entities.get("authorities") if self.dictionary else None
+                graph_articles = self.kg.get_related_articles(
+                    law_names=[law_name_filter] if law_name_filter else None,
+                    terms=entities.get("terms") if self.dictionary else None,
+                    authorities=authority_list, max_results=5,
+                )
+                graph_facts = self.kg.get_graph_facts(
+                    law_names=[law_name_filter] if law_name_filter else None,
+                    terms=entities.get("terms") if self.dictionary else None,
+                    authorities=authority_list, max_results=6,
+                )
+            except Exception as e:
+                logger.warning(f"图谱扩展失败: {e}")
+
+        chunks = self.retriever.retrieve(
+            query=rewritten_query, top_k=top_k, use_reranker=use_reranker,
+            source_filter=source_filter, doc_type_filter=doc_type_filter,
+            law_name_filter=law_name_filter, authority_filter=authority_filter,
+        )
+
+        # 图谱条文补充到上下文
+        if graph_articles:
+            for ga in graph_articles:
+                chunks.append({"text": ga.get("text", ""), "source": ga.get("source", "图谱关联"),
+                               "article_num": ga.get("article_num", ""), "score": 0.5})
+
+        messages = build_prompt(expanded_query, chunks, graph_facts=graph_facts)
+
+        # 发送元信息（重写查询 + sources）
+        sources_preview = [
+            {"source": c.get("source", ""), "article_num": c.get("article_num", ""),
+             "text": c.get("text", "")[:200], "score": round(c.get("score", 0.0), 4)}
+            for c in chunks[:self.retriever.reranker_top_n]
+        ]
+        yield _json.dumps({"type": "meta", "rewritten_query": rewritten_query,
+                           "sources": sources_preview}, ensure_ascii=False) + "\n"
+
+        # 流式生成
+        full_answer = ""
+        try:
+            for token in self.llm.generate_stream(messages, max_new_tokens=max_new_tokens):
+                full_answer += token
+                yield _json.dumps({"type": "token", "text": token}, ensure_ascii=False) + "\n"
+        except AttributeError:
+            # 回退：LLM 不支持流式 → 一次性生成
+            full_answer = self.llm.generate(messages, max_new_tokens=max_new_tokens)
+            yield _json.dumps({"type": "token", "text": full_answer}, ensure_ascii=False) + "\n"
+
+        # 可信度
+        confidence = self.retriever.compute_confidence(question, full_answer, chunks)
+        yield _json.dumps({"type": "done", "confidence": confidence}, ensure_ascii=False) + "\n"

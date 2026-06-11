@@ -48,40 +48,55 @@ class LocalLLM:
         self.model.eval()
         logger.info("本地LLM加载完成")
 
+    def _prepare_inputs(self, messages: List[dict]):
+        import torch
+        text = self.tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True,
+        )
+        return self.tokenizer([text], return_tensors="pt").to(self.device)
+
     def generate(
         self,
         messages: List[dict],
         max_new_tokens: int = 1024,
         temperature: float = 0.1,
     ) -> str:
-        """
-        生成回答
-        Args:
-            messages: [{"role": "system/user/assistant", "content": str}]
-            max_new_tokens: 最大生成token数
-            temperature: 温度（金融场景用低温，减少幻觉）
-        """
         import torch
-
-        text = self.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-        inputs = self.tokenizer([text], return_tensors="pt").to(self.device)
-
+        inputs = self._prepare_inputs(messages)
         with torch.no_grad():
             output_ids = self.model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                do_sample=temperature > 0,
-                repetition_penalty=1.1,
+                **inputs, max_new_tokens=max_new_tokens, temperature=temperature,
+                do_sample=temperature > 0, repetition_penalty=1.1,
             )
-
-        # 只取新生成的部分
         generated = output_ids[0][inputs.input_ids.shape[1]:]
         return self.tokenizer.decode(generated, skip_special_tokens=True)
+
+    def generate_stream(
+        self,
+        messages: List[dict],
+        max_new_tokens: int = 1024,
+        temperature: float = 0.1,
+    ):
+        """流式生成，yield 每个新 token 的文本增量。"""
+        import torch
+        from transformers import TextStreamer, TextIteratorStreamer
+        from threading import Thread
+
+        inputs = self._prepare_inputs(messages)
+        streamer = TextIteratorStreamer(
+            self.tokenizer, skip_prompt=True, skip_special_tokens=True,
+        )
+        gen_kwargs = dict(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            do_sample=temperature > 0,
+            repetition_penalty=1.1,
+            streamer=streamer,
+        )
+        thread = Thread(target=self.model.generate, kwargs=gen_kwargs)
+        thread.start()
+        yield from streamer
 
 
 # ========================

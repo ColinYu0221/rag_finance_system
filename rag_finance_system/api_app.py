@@ -4,6 +4,7 @@ FastAPI 应用 — 从 Streamlit app.py 平移核心逻辑到 REST API。
 启动: py -3 -m uvicorn rag_finance_system.api_app:app --host 0.0.0.0 --port 8000
 """
 
+import json
 import sys
 import os
 from contextlib import asynccontextmanager
@@ -12,6 +13,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import StreamingResponse
 from loguru import logger
 
 # api_app.py 在 rag_finance_system/ 下，同级 .env
@@ -443,4 +445,35 @@ def qa(body: QARequest):
         rewritten_query=result.get("rewritten_query"),
         sources=sources,
         confidence=confidence,
+    )
+
+
+# ── 5. 流式问答 ──
+
+@app.post("/api/qa/stream")
+def qa_stream(body: QARequest):
+    """流式 SSE 问答：检索后逐 token 推送，降低首字延迟。"""
+    if not _check_milvus():
+        raise HTTPException(503, "Milvus 服务不可用")
+
+    def _generate():
+        rag = _get_rag()
+        try:
+            for line in rag.query_stream(
+                question=body.question,
+                use_reranker=body.use_reranker,
+                use_query_rewrite=body.use_query_rewrite,
+                doc_type_filter=body.doc_type_filter,
+                max_new_tokens=body.max_new_tokens,
+            ):
+                yield f"data: {line}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            logger.error(f"流式问答失败: {e}")
+            yield f"data: {{\"type\": \"error\", \"message\": \"{str(e)}\"}}\n\n"
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
