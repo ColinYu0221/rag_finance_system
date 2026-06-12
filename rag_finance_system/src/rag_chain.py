@@ -315,6 +315,7 @@ class RAGChain:
         source_filter: Optional[str] = None,
         doc_type_filter: Optional[str] = None,
         max_new_tokens: int = 1024,
+        include_historical: bool = False,
     ) -> Dict[str, Any]:
         """
         完整问答流程
@@ -388,7 +389,8 @@ class RAGChain:
             except Exception as e:
                 logger.warning(f"图谱扩展失败: {e}")
 
-        # 2. 检索
+        # 2. 检索（默认只返回有效版本，include_historical=True 展开全部）
+        status_filter = None if include_historical else "有效"
         chunks = self.retriever.retrieve(
             query=rewritten_query,
             top_k=top_k,
@@ -397,6 +399,7 @@ class RAGChain:
             doc_type_filter=doc_type_filter,
             law_name_filter=law_name_filter,
             authority_filter=authority_filter,
+            status_filter=status_filter,
         )
         # 2b. 合并图谱扩展结果到检索结果后（图谱结果排在后，不参与reranker评分）
         seen_chunk_ids = {c.get("chunk_id", "") for c in chunks}
@@ -453,6 +456,7 @@ class RAGChain:
         source_filter: Optional[str] = None,
         doc_type_filter: Optional[str] = None,
         max_new_tokens: int = 1024,
+        include_historical: bool = False,
     ):
         """流式问答：检索后逐 token 生成，同时收集完整回答用于溯源。
 
@@ -511,10 +515,12 @@ class RAGChain:
             except Exception as e:
                 logger.warning(f"图谱扩展失败: {e}")
 
+        status_filter = None if include_historical else "有效"
         chunks = self.retriever.retrieve(
             query=rewritten_query, top_k=top_k, use_reranker=use_reranker,
             source_filter=source_filter, doc_type_filter=doc_type_filter,
             law_name_filter=law_name_filter, authority_filter=authority_filter,
+            status_filter=status_filter,
         )
 
         # 图谱条文补充到上下文

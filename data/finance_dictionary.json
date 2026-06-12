@@ -1,647 +1,1629 @@
 {
   "_description": "金融法规词典 — 术语归一、别名召回、法规名命中、机构简称映射",
-  "_version": "1.0.0",
-  "_updated": "2026-06-07",
-
+  "_version": "1.1.0",
+  "_updated": "2026-06-09",
   "terms": {
     "资本充足率": {
-      "aliases": ["资本充足率", "资本充足", "CAR", "Capital Adequacy Ratio"],
+      "aliases": [
+        "资本充足率",
+        "资本充足",
+        "CAR",
+        "Capital Adequacy Ratio"
+      ],
       "category": "银行监管",
       "definition": "商业银行持有的资本与风险加权资产之间的比率，反映银行抵御风险的能力"
     },
     "核心一级资本充足率": {
-      "aliases": ["核心一级资本充足率", "CET1", "核心资本充足率"],
+      "aliases": [
+        "核心一级资本充足率",
+        "CET1",
+        "核心资本充足率"
+      ],
       "category": "银行监管",
       "definition": "核心一级资本与风险加权资产的比率"
     },
     "一级资本充足率": {
-      "aliases": ["一级资本充足率", "Tier 1"],
+      "aliases": [
+        "一级资本充足率",
+        "Tier 1"
+      ],
       "category": "银行监管",
       "definition": "一级资本与风险加权资产的比率"
     },
     "拨备覆盖率": {
-      "aliases": ["拨备覆盖率", "拨备", "贷款损失准备", "贷款拨备率", "Provision Coverage"],
+      "aliases": [
+        "拨备覆盖率",
+        "拨备",
+        "贷款损失准备",
+        "贷款拨备率",
+        "Provision Coverage"
+      ],
       "category": "银行监管",
       "definition": "贷款损失准备与不良贷款余额的比率"
     },
     "不良贷款率": {
-      "aliases": ["不良贷款率", "不良率", "NPL", "Non-Performing Loan", "不良贷款"],
+      "aliases": [
+        "不良贷款率",
+        "不良率",
+        "NPL",
+        "Non-Performing Loan",
+        "不良贷款"
+      ],
       "category": "银行监管",
       "definition": "不良贷款占总贷款余额的比例"
     },
     "流动性覆盖率": {
-      "aliases": ["流动性覆盖率", "LCR", "Liquidity Coverage Ratio"],
+      "aliases": [
+        "流动性覆盖率",
+        "LCR",
+        "Liquidity Coverage Ratio"
+      ],
       "category": "银行监管",
       "definition": "优质流动性资产与未来30天净现金流出量的比率"
     },
     "净稳定资金比率": {
-      "aliases": ["净稳定资金比率", "NSFR", "Net Stable Funding Ratio"],
+      "aliases": [
+        "净稳定资金比率",
+        "NSFR",
+        "Net Stable Funding Ratio"
+      ],
       "category": "银行监管",
       "definition": "可用稳定资金与所需稳定资金的比率"
     },
     "杠杆率": {
-      "aliases": ["杠杆率", "杠杆比率", "Leverage Ratio"],
+      "aliases": [
+        "杠杆率",
+        "杠杆比率",
+        "Leverage Ratio"
+      ],
       "category": "银行监管",
       "definition": "一级资本与表内外资产余额的比率"
     },
     "大额风险暴露": {
-      "aliases": ["大额风险暴露", "大额敞口", "Large Exposure", "集中度风险"],
+      "aliases": [
+        "大额风险暴露",
+        "大额敞口",
+        "Large Exposure",
+        "集中度风险"
+      ],
       "category": "银行监管",
       "definition": "银行对单一客户或关联集团的风险暴露超过监管限额"
     },
     "系统重要性银行": {
-      "aliases": ["系统重要性银行", "D-SIB", "G-SIB", "系统重要性金融机构", "SIFI"],
+      "aliases": [
+        "系统重要性银行",
+        "D-SIB",
+        "G-SIB",
+        "系统重要性金融机构",
+        "SIFI"
+      ],
       "category": "银行监管",
       "definition": "规模大、业务复杂、关联性强的银行，其倒闭可能引发系统性风险"
     },
     "普惠金融": {
-      "aliases": ["普惠金融", "金融包容", "Financial Inclusion", "小微金融"],
+      "aliases": [
+        "普惠金融",
+        "金融包容",
+        "Financial Inclusion",
+        "小微金融"
+      ],
       "category": "金融政策",
       "definition": "为所有阶层和群体提供可负担的正规金融服务"
     },
     "绿色金融": {
-      "aliases": ["绿色金融", "绿色信贷", "绿色债券", "Green Finance", "ESG", "可持续金融", "碳金融"],
+      "aliases": [
+        "绿色金融",
+        "绿色信贷",
+        "绿色债券",
+        "Green Finance",
+        "ESG",
+        "可持续金融",
+        "碳金融"
+      ],
       "category": "金融政策",
       "definition": "支持环境改善、应对气候变化和资源节约高效利用的金融活动"
     },
     "反洗钱": {
-      "aliases": ["反洗钱", "AML", "Anti-Money Laundering", "反恐怖融资", "CFT", "可疑交易"],
+      "aliases": [
+        "反洗钱",
+        "AML",
+        "Anti-Money Laundering",
+        "反恐怖融资",
+        "CFT",
+        "可疑交易"
+      ],
       "category": "合规",
       "definition": "预防和打击通过各种方式掩饰、隐瞒犯罪所得及其收益的活动"
     },
     "内部控制": {
-      "aliases": ["内部控制", "内控", "Internal Control", "内控制度", "内部控制体系"],
+      "aliases": [
+        "内部控制",
+        "内控",
+        "Internal Control",
+        "内控制度",
+        "内部控制体系"
+      ],
       "category": "公司治理",
       "definition": "企业为实现经营目标、保障资产安全、保证会计信息真实完整而采取的政策和程序"
     },
     "合规管理": {
-      "aliases": ["合规管理", "合规", "Compliance", "合规风险", "合规体系"],
+      "aliases": [
+        "合规管理",
+        "合规",
+        "Compliance",
+        "合规风险",
+        "合规体系"
+      ],
       "category": "公司治理",
       "definition": "企业为确保经营活动符合法律法规和监管要求而建立的管理体系"
     },
     "风险管理": {
-      "aliases": ["风险管理", "Risk Management", "全面风险管理", "ERM", "风险管控"],
+      "aliases": [
+        "风险管理",
+        "Risk Management",
+        "全面风险管理",
+        "ERM",
+        "风险管控"
+      ],
       "category": "公司治理",
       "definition": "识别、评估、监测和控制各类风险的过程和制度"
     },
     "关联交易": {
-      "aliases": ["关联交易", "关联方交易", "Related Party Transaction", "内部交易"],
+      "aliases": [
+        "关联交易",
+        "关联方交易",
+        "Related Party Transaction",
+        "内部交易"
+      ],
       "category": "公司治理",
       "definition": "企业与关联方之间发生的转移资源或义务的交易"
     },
     "信息披露": {
-      "aliases": ["信息披露", "信息公开", "Disclosure", "信息透明度", "公示"],
+      "aliases": [
+        "信息披露",
+        "信息公开",
+        "Disclosure",
+        "信息透明度",
+        "公示"
+      ],
       "category": "证券监管",
       "definition": "上市公司或金融机构按规定向公众公开经营管理信息"
     },
     "内幕交易": {
-      "aliases": ["内幕交易", "内幕信息", "Insider Trading", "内幕"],
+      "aliases": [
+        "内幕交易",
+        "内幕信息",
+        "Insider Trading",
+        "内幕"
+      ],
       "category": "证券监管",
       "definition": "利用未公开的重大信息进行证券交易的行为"
     },
     "投资者保护": {
-      "aliases": ["投资者保护", "投资人保护", "Investor Protection", "中小投资者"],
+      "aliases": [
+        "投资者保护",
+        "投资人保护",
+        "Investor Protection",
+        "中小投资者"
+      ],
       "category": "证券监管",
       "definition": "通过制度建设和监管执法保护投资者特别是中小投资者的合法权益"
     },
     "保险保障基金": {
-      "aliases": ["保险保障基金", "保障基金", "Insurance Guaranty Fund"],
+      "aliases": [
+        "保险保障基金",
+        "保障基金",
+        "Insurance Guaranty Fund"
+      ],
       "category": "保险监管",
       "definition": "保险公司缴纳形成的行业风险救助基金"
     },
     "偿付能力": {
-      "aliases": ["偿付能力", "Solvency", "偿付能力充足率", "偿二代", "C-ROSS"],
+      "aliases": [
+        "偿付能力",
+        "Solvency",
+        "偿付能力充足率",
+        "偿二代",
+        "C-ROSS"
+      ],
       "category": "保险监管",
       "definition": "保险公司履行赔偿或给付保险金责任的能力"
     },
     "存款保险": {
-      "aliases": ["存款保险", "存款保障", "Deposit Insurance", "存款保险基金"],
+      "aliases": [
+        "存款保险",
+        "存款保障",
+        "Deposit Insurance",
+        "存款保险基金"
+      ],
       "category": "银行监管",
       "definition": "为存款人提供保障，在银行破产时赔付存款人的制度"
     },
     "贷款五级分类": {
-      "aliases": ["贷款五级分类", "五级分类", "贷款分类", "正常关注次级可疑损失"],
+      "aliases": [
+        "贷款五级分类",
+        "五级分类",
+        "贷款分类",
+        "正常关注次级可疑损失"
+      ],
       "category": "银行监管",
       "definition": "将贷款分为正常、关注、次级、可疑、损失五类的风险分类制度"
     },
     "授信集中度": {
-      "aliases": ["授信集中度", "贷款集中度", "行业集中度", "客户集中度"],
+      "aliases": [
+        "授信集中度",
+        "贷款集中度",
+        "行业集中度",
+        "客户集中度"
+      ],
       "category": "银行监管",
       "definition": "银行对单一客户、行业或地区的授信占总资本的比重"
     },
     "股东责任": {
-      "aliases": ["股东责任", "股东义务", "出资义务", "股东权利", "股东权益", "股东"],
+      "aliases": [
+        "股东责任",
+        "股东义务",
+        "出资义务",
+        "股东权利",
+        "股东权益",
+        "股东"
+      ],
       "category": "公司法",
       "definition": "股东对公司承担的义务和责任，包括出资、诚信、守法等"
     },
     "注册资本": {
-      "aliases": ["注册资本", "注册资金", "Registered Capital", "认缴资本", "实缴资本"],
+      "aliases": [
+        "注册资本",
+        "注册资金",
+        "Registered Capital",
+        "认缴资本",
+        "实缴资本"
+      ],
       "category": "公司法",
       "definition": "公司章程规定的全体股东认缴的出资额"
     },
     "法定代表人": {
-      "aliases": ["法定代表人", "法人代表", "Legal Representative", "法定代表人"],
+      "aliases": [
+        "法定代表人",
+        "法人代表",
+        "Legal Representative",
+        "法定代表人"
+      ],
       "category": "公司法",
       "definition": "依法代表法人行使民事权利和履行民事义务的主要负责人"
     },
     "董事会": {
-      "aliases": ["董事会", "董事", "Board of Directors", "独立董事", "执行董事"],
+      "aliases": [
+        "董事会",
+        "董事",
+        "Board of Directors",
+        "独立董事",
+        "执行董事"
+      ],
       "category": "公司治理",
       "definition": "公司的经营决策机构，由股东会选举产生"
     },
     "监事会": {
-      "aliases": ["监事会", "监事", "Supervisory Board"],
+      "aliases": [
+        "监事会",
+        "监事",
+        "Supervisory Board"
+      ],
       "category": "公司治理",
       "definition": "公司的监督机构，负责监督董事和高级管理人员的履职情况"
     },
     "证券发行": {
-      "aliases": ["证券发行", "IPO", "股票发行", "债券发行", "发行审核", "注册制"],
+      "aliases": [
+        "证券发行",
+        "IPO",
+        "股票发行",
+        "债券发行",
+        "发行审核",
+        "注册制"
+      ],
       "category": "证券监管",
       "definition": "发行人依法向投资者公开发售证券的行为"
     },
     "上市公司收购": {
-      "aliases": ["上市公司收购", "收购", "并购", "M&A", "要约收购", "协议收购"],
+      "aliases": [
+        "上市公司收购",
+        "收购",
+        "并购",
+        "M&A",
+        "要约收购",
+        "协议收购"
+      ],
       "category": "证券监管",
       "definition": "投资者依法取得上市公司控制权的行为"
     },
     "期货交易": {
-      "aliases": ["期货交易", "期货", "Futures", "衍生品交易", "期货合约"],
+      "aliases": [
+        "期货交易",
+        "期货",
+        "Futures",
+        "衍生品交易",
+        "期货合约"
+      ],
       "category": "期货监管",
       "definition": "在期货交易所进行的标准化合约交易"
     },
     "信托财产": {
-      "aliases": ["信托财产", "信托资产", "信托", "Trust", "信托计划", "资管计划"],
+      "aliases": [
+        "信托财产",
+        "信托资产",
+        "信托",
+        "Trust",
+        "信托计划",
+        "资管计划"
+      ],
       "category": "信托监管",
       "definition": "委托人转移给受托人管理的财产"
     },
     "票据": {
-      "aliases": ["票据", "汇票", "本票", "支票", "商业票据", "银行承兑汇票", "承兑"],
+      "aliases": [
+        "票据",
+        "汇票",
+        "本票",
+        "支票",
+        "商业票据",
+        "银行承兑汇票",
+        "承兑"
+      ],
       "category": "支付结算",
       "definition": "出票人签发的、约定由付款人无条件支付确定金额的有价证券"
     },
     "个人信息保护": {
-      "aliases": ["个人信息保护", "个人信息", "个人数据", "隐私保护", "数据隐私", "Personal Data"],
+      "aliases": [
+        "个人信息保护",
+        "个人信息",
+        "个人数据",
+        "隐私保护",
+        "数据隐私",
+        "Personal Data"
+      ],
       "category": "数据合规",
       "definition": "保护个人信息不被非法收集、使用、加工、传输、公开"
     },
     "数据安全": {
-      "aliases": ["数据安全", "数据保护", "Data Security", "数据分类分级", "重要数据"],
+      "aliases": [
+        "数据安全",
+        "数据保护",
+        "Data Security",
+        "数据分类分级",
+        "重要数据"
+      ],
       "category": "数据合规",
       "definition": "保护数据免受未经授权的访问、使用、泄露、破坏或篡改"
     },
     "网络安全": {
-      "aliases": ["网络安全", "Cyber Security", "网络安全等级保护", "等保", "关键信息基础设施"],
+      "aliases": [
+        "网络安全",
+        "Cyber Security",
+        "网络安全等级保护",
+        "等保",
+        "关键信息基础设施"
+      ],
       "category": "数据合规",
       "definition": "保护网络系统及其数据免受攻击、破坏、非法访问"
     },
     "跨境数据流动": {
-      "aliases": ["跨境数据流动", "数据出境", "跨境数据传输", "Cross-border Data Transfer"],
+      "aliases": [
+        "跨境数据流动",
+        "数据出境",
+        "跨境数据传输",
+        "Cross-border Data Transfer"
+      ],
       "category": "数据合规",
       "definition": "数据从一国境内向境外传输的行为"
     },
     "破产清算": {
-      "aliases": ["破产清算", "破产", "破产重整", "破产和解", "Bankruptcy", "清算"],
+      "aliases": [
+        "破产清算",
+        "破产",
+        "破产重整",
+        "破产和解",
+        "Bankruptcy",
+        "清算"
+      ],
       "category": "公司法",
       "definition": "企业法人不能清偿到期债务，依法清理债权债务的程序"
     },
     "知识产权": {
-      "aliases": ["知识产权", "IP", "专利权", "商标权", "著作权", "Intellectual Property"],
+      "aliases": [
+        "知识产权",
+        "IP",
+        "专利权",
+        "商标权",
+        "著作权",
+        "Intellectual Property"
+      ],
       "category": "知识产权",
       "definition": "对智力劳动成果所享有的专有权利"
     },
     "反垄断": {
-      "aliases": ["反垄断", "反垄断法", "Anti-monopoly", "市场支配地位", "经营者集中"],
+      "aliases": [
+        "反垄断",
+        "反垄断法",
+        "Anti-monopoly",
+        "市场支配地位",
+        "经营者集中"
+      ],
       "category": "竞争法",
       "definition": "预防和制止垄断行为，保护市场公平竞争"
     },
     "反不正当竞争": {
-      "aliases": ["反不正当竞争", "不正当竞争", "商业贿赂", "商业秘密", "混淆行为"],
+      "aliases": [
+        "反不正当竞争",
+        "不正当竞争",
+        "商业贿赂",
+        "商业秘密",
+        "混淆行为"
+      ],
       "category": "竞争法",
       "definition": "制止经营者违反诚信原则和商业道德的不正当竞争行为"
     },
     "利率市场化": {
-      "aliases": ["利率市场化", "LPR", "贷款市场报价利率", "利率定价", "利率并轨"],
+      "aliases": [
+        "利率市场化",
+        "LPR",
+        "贷款市场报价利率",
+        "利率定价",
+        "利率并轨"
+      ],
       "category": "货币政策",
       "definition": "由市场供求决定利率水平，央行通过货币政策工具间接引导"
     },
     "存款准备金率": {
-      "aliases": ["存款准备金率", "准备金率", "存款准备金", "RRR", "Required Reserve Ratio", "降准", "定向降准"],
+      "aliases": [
+        "存款准备金率",
+        "准备金率",
+        "存款准备金",
+        "RRR",
+        "Required Reserve Ratio",
+        "降准",
+        "定向降准"
+      ],
       "category": "货币政策",
       "definition": "商业银行按规定向中央银行缴存的存款准备金占存款总额的比率"
     },
     "再贷款": {
-      "aliases": ["再贷款", "央行再贷款", "支农再贷款", "支小再贷款", "PSL", "抵押补充贷款", "MLF", "中期借贷便利", "SLF", "常备借贷便利"],
+      "aliases": [
+        "再贷款",
+        "央行再贷款",
+        "支农再贷款",
+        "支小再贷款",
+        "PSL",
+        "抵押补充贷款",
+        "MLF",
+        "中期借贷便利",
+        "SLF",
+        "常备借贷便利"
+      ],
       "category": "货币政策",
       "definition": "中央银行向金融机构提供的贷款"
     },
     "宏观审慎评估": {
-      "aliases": ["宏观审慎评估", "MPA", "Macro Prudential Assessment", "宏观审慎"],
+      "aliases": [
+        "宏观审慎评估",
+        "MPA",
+        "Macro Prudential Assessment",
+        "宏观审慎"
+      ],
       "category": "宏观审慎",
       "definition": "央行对金融机构进行的宏观审慎评估体系"
     },
     "跨境资本流动": {
-      "aliases": ["跨境资本流动", "资本流动", "资本项目", "资本管制", "资金跨境", "QDII", "QFII", "RQFII", "沪港通", "深港通", "债券通"],
+      "aliases": [
+        "跨境资本流动",
+        "资本流动",
+        "资本项目",
+        "资本管制",
+        "资金跨境",
+        "QDII",
+        "QFII",
+        "RQFII",
+        "沪港通",
+        "深港通",
+        "债券通"
+      ],
       "category": "外汇管理",
       "definition": "资金在国际间的流动，包括直接投资、证券投资和其他投资"
     },
     "外汇管理": {
-      "aliases": ["外汇管理", "外汇管制", "结售汇", "经常项目", "外汇储备"],
+      "aliases": [
+        "外汇管理",
+        "外汇管制",
+        "结售汇",
+        "经常项目",
+        "外汇储备"
+      ],
       "category": "外汇管理",
       "definition": "国家对外汇收支、买卖、借贷、转移等实施的管理制度"
     },
     "金融消费者权益": {
-      "aliases": ["金融消费者权益", "金融消费者", "消费者保护", "金融消费权益保护", "适当性管理", "合格投资者"],
+      "aliases": [
+        "金融消费者权益",
+        "金融消费者",
+        "消费者保护",
+        "金融消费权益保护",
+        "适当性管理",
+        "合格投资者"
+      ],
       "category": "消费者保护",
       "definition": "金融消费者的财产安全权、知情权、自主选择权、公平交易权等合法权益"
     },
     "征信": {
-      "aliases": ["征信", "征信系统", "信用报告", "信用记录", "征信中心", "百行征信", "社会信用体系"],
+      "aliases": [
+        "征信",
+        "征信系统",
+        "信用报告",
+        "信用记录",
+        "征信中心",
+        "百行征信",
+        "社会信用体系"
+      ],
       "category": "征信管理",
       "definition": "依法收集、整理、保存、加工个人和企业的信用信息并提供查询服务"
     },
     "数字人民币": {
-      "aliases": ["数字人民币", "数字人民币", "e-CNY", "央行数字货币", "DC/EP", "数字货币"],
+      "aliases": [
+        "数字人民币",
+        "数字人民币",
+        "e-CNY",
+        "央行数字货币",
+        "DC/EP",
+        "数字货币"
+      ],
       "category": "支付结算",
       "definition": "中国人民银行发行的法定数字货币"
     },
     "第三方支付": {
-      "aliases": ["第三方支付", "支付机构", "非银行支付", "支付宝", "微信支付", "支付牌照", "网络支付"],
+      "aliases": [
+        "第三方支付",
+        "支付机构",
+        "非银行支付",
+        "支付宝",
+        "微信支付",
+        "支付牌照",
+        "网络支付"
+      ],
       "category": "支付结算",
       "definition": "非银行支付机构提供的网络支付服务"
     },
     "供应链金融": {
-      "aliases": ["供应链金融", "供应链", "应收账款融资", "存货融资", "预付款融资", "Supply Chain Finance"],
+      "aliases": [
+        "供应链金融",
+        "供应链",
+        "应收账款融资",
+        "存货融资",
+        "预付款融资",
+        "Supply Chain Finance"
+      ],
       "category": "金融业务",
       "definition": "以核心企业信用为基础，为供应链上下游企业提供融资服务"
     },
     "资产证券化": {
-      "aliases": ["资产证券化", "ABS", "资产支持证券", "信贷资产证券化", "企业资产证券化", "ABN"],
+      "aliases": [
+        "资产证券化",
+        "ABS",
+        "资产支持证券",
+        "信贷资产证券化",
+        "企业资产证券化",
+        "ABN"
+      ],
       "category": "金融业务",
       "definition": "以基础资产未来现金流为偿付支持发行证券的融资方式"
     },
     "地方政府债": {
-      "aliases": ["地方政府债", "地方债", "专项债", "一般债", "地方政府债券", "城投债", "隐性债务"],
+      "aliases": [
+        "地方政府债",
+        "地方债",
+        "专项债",
+        "一般债",
+        "地方政府债券",
+        "城投债",
+        "隐性债务"
+      ],
       "category": "债券市场",
       "definition": "省级地方政府发行的债券，用于公益性项目建设"
     },
     "理财产品": {
-      "aliases": ["理财产品", "银行理财", "理财", "净值型", "理财产品销售", "理财子公司"],
+      "aliases": [
+        "理财产品",
+        "银行理财",
+        "理财",
+        "净值型",
+        "理财产品销售",
+        "理财子公司"
+      ],
       "category": "资产管理",
       "definition": "商业银行等金融机构发行的资产管理产品"
     },
     "刚性兑付": {
-      "aliases": ["刚性兑付", "刚兑", "打破刚兑", "净值化管理"],
+      "aliases": [
+        "刚性兑付",
+        "刚兑",
+        "打破刚兑",
+        "净值化管理"
+      ],
       "category": "资产管理",
       "definition": "资管产品到期时发行方保证本金和收益的隐性承诺"
+    },
+    "证券交易": {
+      "aliases": [
+        "证券交易",
+        "证券买卖",
+        "Securities Trading"
+      ],
+      "definition": "依法在证券交易场所进行的证券买卖行为",
+      "category": "证券监管"
+    },
+    "保险人": {
+      "aliases": [
+        "保险人",
+        "承保人",
+        "Insurer"
+      ],
+      "definition": "与投保人订立保险合同，承担赔偿或给付保险金责任的保险公司",
+      "category": "保险监管"
+    },
+    "证券公司": {
+      "aliases": [
+        "证券公司",
+        "券商",
+        "Securities Company",
+        "Broker-Dealer"
+      ],
+      "definition": "经国务院证券监督管理机构批准设立的从事证券经营业务的有限责任公司或股份有限公司",
+      "category": "证券监管"
+    },
+    "公司章程": {
+      "aliases": [
+        "公司章程",
+        "章程",
+        "Articles of Association",
+        "AOA"
+      ],
+      "definition": "公司依法制定的、规定公司基本情况和组织运行规则的文件",
+      "category": "公司法"
+    },
+    "股东会": {
+      "aliases": [
+        "股东会",
+        "股东大会",
+        "Shareholders Meeting"
+      ],
+      "definition": "由全体股东组成的公司最高权力机构",
+      "category": "公司法"
+    },
+    "被保险人": {
+      "aliases": [
+        "被保险人",
+        "Insured"
+      ],
+      "definition": "其财产或人身受保险合同保障，享有保险金请求权的人",
+      "category": "保险监管"
+    },
+    "金融机构": {
+      "aliases": [
+        "金融机构",
+        "Financial Institution",
+        "金融组织"
+      ],
+      "definition": "依法设立的从事金融业务的机构，包括银行、证券公司、保险公司等",
+      "category": "金融业务"
+    },
+    "公司债券": {
+      "aliases": [
+        "公司债券",
+        "公司债",
+        "Corporate Bond"
+      ],
+      "definition": "公司依照法定程序发行、约定在一定期限内还本付息的有价证券",
+      "category": "证券监管"
+    },
+    "税务机关": {
+      "aliases": [
+        "税务机关",
+        "税务局",
+        "Tax Authority"
+      ],
+      "definition": "负责税收征收管理的国家机关",
+      "category": "税务"
+    },
+    "投保人": {
+      "aliases": [
+        "投保人",
+        "Policyholder",
+        "Applicant"
+      ],
+      "definition": "与保险人订立保险合同，并按照保险合同负有支付保险费义务的人",
+      "category": "保险监管"
+    },
+    "发行人": {
+      "aliases": [
+        "发行人",
+        "Issuer",
+        "发行主体"
+      ],
+      "definition": "为筹集资金而发行证券的政府、企业、金融机构等主体",
+      "category": "证券监管"
+    },
+    "抵押权": {
+      "aliases": [
+        "抵押权",
+        "抵押",
+        "Mortgage",
+        "Mortgage Right"
+      ],
+      "definition": "债务人或第三人不转移财产占有而将该财产作为债权的担保",
+      "category": "基础法律"
+    },
+    "上市公司": {
+      "aliases": [
+        "上市公司",
+        "Listed Company",
+        "挂牌公司"
+      ],
+      "definition": "依法在证券交易所上市交易的股份有限公司",
+      "category": "公司法"
+    },
+    "保险公司": {
+      "aliases": [
+        "保险公司",
+        "保险机构",
+        "Insurance Company",
+        "Insurer"
+      ],
+      "definition": "依法设立的经营保险业务的金融机构",
+      "category": "保险监管"
+    },
+    "投资者": {
+      "aliases": [
+        "投资者",
+        "投资人",
+        "Investor",
+        "出资人"
+      ],
+      "definition": "投入资金以获取收益或权益的自然人或机构",
+      "category": "证券监管"
+    },
+    "保险费": {
+      "aliases": [
+        "保险费",
+        "保费",
+        "Insurance Premium"
+      ],
+      "definition": "投保人根据保险合同的约定向保险人支付的费用",
+      "category": "保险监管"
+    },
+    "保险金": {
+      "aliases": [
+        "保险金",
+        "保险赔偿",
+        "Insurance Proceeds",
+        "Claim Payment"
+      ],
+      "definition": "保险事故发生后，保险人向被保险人或受益人支付的金额",
+      "category": "保险监管"
+    },
+    "消费者": {
+      "aliases": [
+        "消费者",
+        "Consumer",
+        "顾客"
+      ],
+      "definition": "为生活消费需要购买、使用商品或接受服务的自然人",
+      "category": "消费者保护"
     }
   },
-
   "law_names": {
     "中华人民共和国公司法": {
       "short": "公司法",
-      "aliases": ["公司法", "新公司法", "Company Law"],
+      "aliases": [
+        "公司法",
+        "新公司法",
+        "Company Law"
+      ],
       "category": "市场主体",
       "latest_year": "2023"
     },
     "中华人民共和国证券法": {
       "short": "证券法",
-      "aliases": ["证券法", "Securities Law"],
+      "aliases": [
+        "证券法",
+        "Securities Law"
+      ],
       "category": "证券监管",
       "latest_year": "2019"
     },
     "中华人民共和国保险法": {
       "short": "保险法",
-      "aliases": ["保险法", "Insurance Law"],
+      "aliases": [
+        "保险法",
+        "Insurance Law"
+      ],
       "category": "保险监管",
       "latest_year": "2015"
     },
     "中华人民共和国商业银行法": {
       "short": "商业银行法",
-      "aliases": ["商业银行法", "银行法", "Commercial Bank Law"],
+      "aliases": [
+        "商业银行法",
+        "银行法",
+        "Commercial Bank Law"
+      ],
       "category": "银行监管",
       "latest_year": "2015"
     },
     "中华人民共和国中国人民银行法": {
       "short": "中国人民银行法",
-      "aliases": ["中国人民银行法", "央行法", "中央银行法"],
+      "aliases": [
+        "中国人民银行法",
+        "央行法",
+        "中央银行法"
+      ],
       "category": "央行",
       "latest_year": "2003"
     },
     "中华人民共和国银行业监督管理法": {
       "short": "银行业监督管理法",
-      "aliases": ["银行业监督管理法", "银监法", "Banking Supervision Law"],
+      "aliases": [
+        "银行业监督管理法",
+        "银监法",
+        "Banking Supervision Law"
+      ],
       "category": "银行监管",
       "latest_year": "2006"
     },
     "中华人民共和国民法典": {
       "short": "民法典",
-      "aliases": ["民法典", "民法", "Civil Code"],
+      "aliases": [
+        "民法典",
+        "民法",
+        "Civil Code"
+      ],
       "category": "基础法律",
       "latest_year": "2020"
     },
     "中华人民共和国刑法": {
       "short": "刑法",
-      "aliases": ["刑法", "Criminal Law"],
+      "aliases": [
+        "刑法",
+        "Criminal Law"
+      ],
       "category": "基础法律",
       "latest_year": "2020"
     },
     "中华人民共和国证券投资基金法": {
       "short": "证券投资基金法",
-      "aliases": ["证券投资基金法", "基金法", "Securities Investment Fund Law"],
+      "aliases": [
+        "证券投资基金法",
+        "基金法",
+        "Securities Investment Fund Law"
+      ],
       "category": "证券监管",
       "latest_year": "2015"
     },
     "中华人民共和国期货和衍生品法": {
       "short": "期货和衍生品法",
-      "aliases": ["期货和衍生品法", "期货法", "Futures and Derivatives Law"],
+      "aliases": [
+        "期货和衍生品法",
+        "期货法",
+        "Futures and Derivatives Law"
+      ],
       "category": "期货监管",
       "latest_year": "2022"
     },
     "中华人民共和国信托法": {
       "short": "信托法",
-      "aliases": ["信托法", "Trust Law"],
+      "aliases": [
+        "信托法",
+        "Trust Law"
+      ],
       "category": "信托监管",
       "latest_year": "2001"
     },
     "中华人民共和国票据法": {
       "short": "票据法",
-      "aliases": ["票据法", "Negotiable Instruments Law"],
+      "aliases": [
+        "票据法",
+        "Negotiable Instruments Law"
+      ],
       "category": "支付结算",
       "latest_year": "2004"
     },
     "中华人民共和国企业破产法": {
       "short": "企业破产法",
-      "aliases": ["企业破产法", "破产法", "Enterprise Bankruptcy Law"],
+      "aliases": [
+        "企业破产法",
+        "破产法",
+        "Enterprise Bankruptcy Law"
+      ],
       "category": "市场主体",
       "latest_year": "2007"
     },
     "中华人民共和国反洗钱法": {
       "short": "反洗钱法",
-      "aliases": ["反洗钱法", "Anti-Money Laundering Law"],
+      "aliases": [
+        "反洗钱法",
+        "Anti-Money Laundering Law"
+      ],
       "category": "合规",
       "latest_year": "2024"
     },
     "中华人民共和国反垄断法": {
       "short": "反垄断法",
-      "aliases": ["反垄断法", "Anti-monopoly Law"],
+      "aliases": [
+        "反垄断法",
+        "Anti-monopoly Law"
+      ],
       "category": "竞争法",
       "latest_year": "2022"
     },
     "中华人民共和国反不正当竞争法": {
       "short": "反不正当竞争法",
-      "aliases": ["反不正当竞争法", "Anti-Unfair Competition Law"],
+      "aliases": [
+        "反不正当竞争法",
+        "Anti-Unfair Competition Law"
+      ],
       "category": "竞争法",
       "latest_year": "2025"
     },
     "中华人民共和国个人信息保护法": {
       "short": "个人信息保护法",
-      "aliases": ["个人信息保护法", "个保法", "PIPL", "Personal Information Protection Law"],
+      "aliases": [
+        "个人信息保护法",
+        "个保法",
+        "PIPL",
+        "Personal Information Protection Law"
+      ],
       "category": "数据合规",
       "latest_year": "2021"
     },
     "中华人民共和国网络安全法": {
       "short": "网络安全法",
-      "aliases": ["网络安全法", "Cyber Security Law"],
+      "aliases": [
+        "网络安全法",
+        "Cyber Security Law"
+      ],
       "category": "数据合规",
       "latest_year": "2025"
     },
     "中华人民共和国数据安全法": {
       "short": "数据安全法",
-      "aliases": ["数据安全法", "Data Security Law"],
+      "aliases": [
+        "数据安全法",
+        "Data Security Law"
+      ],
       "category": "数据合规",
       "latest_year": "2021"
     },
     "中华人民共和国增值税法": {
       "short": "增值税法",
-      "aliases": ["增值税法", "VAT Law"],
+      "aliases": [
+        "增值税法",
+        "VAT Law"
+      ],
       "category": "税务",
       "latest_year": "2024"
     },
     "中华人民共和国企业所得税法": {
       "short": "企业所得税法",
-      "aliases": ["企业所得税法", "企业所得税", "EIT Law"],
+      "aliases": [
+        "企业所得税法",
+        "企业所得税",
+        "EIT Law"
+      ],
       "category": "税务",
       "latest_year": "2018"
     },
     "中华人民共和国个人所得税法": {
       "short": "个人所得税法",
-      "aliases": ["个人所得税法", "个人所得税", "个税法", "IIT Law"],
+      "aliases": [
+        "个人所得税法",
+        "个人所得税",
+        "个税法",
+        "IIT Law"
+      ],
       "category": "税务",
       "latest_year": "2018"
     },
     "中华人民共和国印花税法": {
       "short": "印花税法",
-      "aliases": ["印花税法", "Stamp Tax Law"],
+      "aliases": [
+        "印花税法",
+        "Stamp Tax Law"
+      ],
       "category": "税务",
       "latest_year": "2021"
     },
     "中华人民共和国契税法": {
       "short": "契税法",
-      "aliases": ["契税法", "Deed Tax Law"],
+      "aliases": [
+        "契税法",
+        "Deed Tax Law"
+      ],
       "category": "税务",
       "latest_year": "2020"
     },
     "中华人民共和国关税法": {
       "short": "关税法",
-      "aliases": ["关税法", "Tariff Law"],
+      "aliases": [
+        "关税法",
+        "Tariff Law"
+      ],
       "category": "税务",
       "latest_year": "2024"
     },
     "中华人民共和国海商法": {
       "short": "海商法",
-      "aliases": ["海商法", "Maritime Law"],
+      "aliases": [
+        "海商法",
+        "Maritime Law"
+      ],
       "category": "国际贸易",
       "latest_year": "1992"
     },
     "中华人民共和国对外贸易法": {
       "short": "对外贸易法",
-      "aliases": ["对外贸易法", "外贸法", "Foreign Trade Law"],
+      "aliases": [
+        "对外贸易法",
+        "外贸法",
+        "Foreign Trade Law"
+      ],
       "category": "国际贸易",
       "latest_year": "2025"
     },
     "中华人民共和国外商投资法": {
       "short": "外商投资法",
-      "aliases": ["外商投资法", "Foreign Investment Law", "外资法"],
+      "aliases": [
+        "外商投资法",
+        "Foreign Investment Law",
+        "外资法"
+      ],
       "category": "外资",
       "latest_year": "2019"
     },
     "中华人民共和国审计法": {
       "short": "审计法",
-      "aliases": ["审计法", "Audit Law"],
+      "aliases": [
+        "审计法",
+        "Audit Law"
+      ],
       "category": "审计",
       "latest_year": "2021"
     },
     "中华人民共和国会计法": {
       "short": "会计法",
-      "aliases": ["会计法", "Accounting Law"],
+      "aliases": [
+        "会计法",
+        "Accounting Law"
+      ],
       "category": "会计",
       "latest_year": "2024"
     },
     "中华人民共和国电子签名法": {
       "short": "电子签名法",
-      "aliases": ["电子签名法", "Electronic Signature Law"],
+      "aliases": [
+        "电子签名法",
+        "Electronic Signature Law"
+      ],
       "category": "电子商务",
       "latest_year": "2019"
     },
     "中华人民共和国电子商务法": {
       "short": "电子商务法",
-      "aliases": ["电子商务法", "E-Commerce Law"],
+      "aliases": [
+        "电子商务法",
+        "E-Commerce Law"
+      ],
       "category": "电子商务",
       "latest_year": "2018"
     },
     "中华人民共和国预算法": {
       "short": "预算法",
-      "aliases": ["预算法", "Budget Law"],
+      "aliases": [
+        "预算法",
+        "Budget Law"
+      ],
       "category": "财政",
       "latest_year": "2018"
     },
     "中华人民共和国担保法": {
       "short": "担保法",
-      "aliases": ["担保法", "Guarantee Law"],
+      "aliases": [
+        "担保法",
+        "Guarantee Law"
+      ],
       "category": "基础法律",
       "latest_year": "1995",
       "note": "民法典施行后已废止"
     },
     "中华人民共和国合同法": {
       "short": "合同法",
-      "aliases": ["合同法", "Contract Law"],
+      "aliases": [
+        "合同法",
+        "Contract Law"
+      ],
       "category": "基础法律",
       "latest_year": "1999",
       "note": "民法典施行后已废止"
     },
     "中华人民共和国物权法": {
       "short": "物权法",
-      "aliases": ["物权法", "Property Law"],
+      "aliases": [
+        "物权法",
+        "Property Law"
+      ],
       "category": "基础法律",
       "latest_year": "2007",
       "note": "民法典施行后已废止"
     },
     "中华人民共和国著作权法": {
       "short": "著作权法",
-      "aliases": ["著作权法", "Copyright Law"],
+      "aliases": [
+        "著作权法",
+        "Copyright Law"
+      ],
       "category": "知识产权",
       "latest_year": "2020"
     },
     "中华人民共和国专利法": {
       "short": "专利法",
-      "aliases": ["专利法", "Patent Law"],
+      "aliases": [
+        "专利法",
+        "Patent Law"
+      ],
       "category": "知识产权",
       "latest_year": "2020"
     },
     "中华人民共和国商标法": {
       "short": "商标法",
-      "aliases": ["商标法", "Trademark Law"],
+      "aliases": [
+        "商标法",
+        "Trademark Law"
+      ],
       "category": "知识产权",
       "latest_year": "2019"
     },
     "中华人民共和国海南自由贸易港法": {
       "short": "海南自由贸易港法",
-      "aliases": ["海南自由贸易港法", "Hainan Free Trade Port Law"],
+      "aliases": [
+        "海南自由贸易港法",
+        "Hainan Free Trade Port Law"
+      ],
       "category": "区域政策",
       "latest_year": "2021"
     },
     "中华人民共和国民营经济促进法": {
       "short": "民营经济促进法",
-      "aliases": ["民营经济促进法", "Private Economy Promotion Law"],
+      "aliases": [
+        "民营经济促进法",
+        "Private Economy Promotion Law"
+      ],
       "category": "市场主体",
       "latest_year": "2025"
+    },
+    "中华人民共和国个人独资企业法": {
+      "short": "个人独资企业法",
+      "aliases": [
+        "个人独资企业法"
+      ],
+      "category": "市场主体",
+      "latest_year": "1999"
+    },
+    "中华人民共和国中小企业促进法": {
+      "short": "中小企业促进法",
+      "aliases": [
+        "中小企业促进法"
+      ],
+      "category": "市场主体",
+      "latest_year": "2017"
+    },
+    "中华人民共和国出口管制法": {
+      "short": "出口管制法",
+      "aliases": [
+        "出口管制法"
+      ],
+      "category": "国际贸易",
+      "latest_year": "2020"
+    },
+    "中华人民共和国资产评估法": {
+      "short": "资产评估法",
+      "aliases": [
+        "资产评估法",
+        "Asset Appraisal Law"
+      ],
+      "category": "金融服务",
+      "latest_year": "2016"
+    },
+    "中华人民共和国城市维护建设税法": {
+      "short": "城市维护建设税法",
+      "aliases": [
+        "城市维护建设税法"
+      ],
+      "category": "税务",
+      "latest_year": "2020"
+    },
+    "中华人民共和国烟叶税法": {
+      "short": "烟叶税法",
+      "aliases": [
+        "烟叶税法"
+      ],
+      "category": "税务",
+      "latest_year": "2017"
+    },
+    "中华人民共和国环境保护税法": {
+      "short": "环境保护税法",
+      "aliases": [
+        "环境保护税法"
+      ],
+      "category": "税务",
+      "latest_year": "2025"
+    },
+    "中华人民共和国统计法": {
+      "short": "统计法",
+      "aliases": [
+        "统计法"
+      ],
+      "category": "统计",
+      "latest_year": "2024"
+    },
+    "中华人民共和国耕地占用税法": {
+      "short": "耕地占用税法",
+      "aliases": [
+        "耕地占用税法"
+      ],
+      "category": "税务",
+      "latest_year": "2018"
+    },
+    "中华人民共和国船舶吨税法": {
+      "short": "船舶吨税法",
+      "aliases": [
+        "船舶吨税法"
+      ],
+      "category": "税务",
+      "latest_year": "2018"
+    },
+    "中华人民共和国资源税法": {
+      "short": "资源税法",
+      "aliases": [
+        "资源税法"
+      ],
+      "category": "税务",
+      "latest_year": "2019"
+    },
+    "中华人民共和国车船税法": {
+      "short": "车船税法",
+      "aliases": [
+        "车船税法"
+      ],
+      "category": "税务",
+      "latest_year": "2019"
+    },
+    "中华人民共和国车辆购置税法": {
+      "short": "车辆购置税法",
+      "aliases": [
+        "车辆购置税法"
+      ],
+      "category": "税务",
+      "latest_year": "2018"
+    },
+    "中华人民共和国进出口商品检验法": {
+      "short": "进出口商品检验法",
+      "aliases": [
+        "进出口商品检验法"
+      ],
+      "category": "国际贸易",
+      "latest_year": "2021"
     }
   },
-
   "authorities": {
     "国家金融监督管理总局": {
       "short": "金融监管总局",
-      "aliases": ["国家金融监督管理总局", "金融监管总局", "金监总局", "银保监会", "中国银保监会", "银监会", "保监会", "NFRA", "National Financial Regulatory Administration"],
-      "historical": ["中国银保监会", "中国银监会", "中国保监会"],
+      "aliases": [
+        "国家金融监督管理总局",
+        "金融监管总局",
+        "金监总局",
+        "银保监会",
+        "中国银保监会",
+        "银监会",
+        "保监会",
+        "NFRA",
+        "National Financial Regulatory Administration"
+      ],
+      "historical": [
+        "中国银保监会",
+        "中国银监会",
+        "中国保监会"
+      ],
       "category": "银行保险监管",
       "level": "中央"
     },
     "中国人民银行": {
       "short": "人民银行",
-      "aliases": ["中国人民银行", "人民银行", "央行", "PBoC", "People's Bank of China", "人行"],
+      "aliases": [
+        "中国人民银行",
+        "人民银行",
+        "央行",
+        "PBoC",
+        "People's Bank of China",
+        "人行"
+      ],
       "category": "中央银行",
       "level": "中央"
     },
     "中国证券监督管理委员会": {
       "short": "证监会",
-      "aliases": ["中国证券监督管理委员会", "证监会", "中国证监会", "CSRC", "China Securities Regulatory Commission"],
+      "aliases": [
+        "中国证券监督管理委员会",
+        "证监会",
+        "中国证监会",
+        "CSRC",
+        "China Securities Regulatory Commission"
+      ],
       "category": "证券监管",
       "level": "中央"
     },
     "国家外汇管理局": {
       "short": "外汇管理局",
-      "aliases": ["国家外汇管理局", "外汇管理局", "外管局", "SAFE", "State Administration of Foreign Exchange"],
+      "aliases": [
+        "国家外汇管理局",
+        "外汇管理局",
+        "外管局",
+        "SAFE",
+        "State Administration of Foreign Exchange"
+      ],
       "category": "外汇管理",
       "level": "中央"
     },
     "中国银行间市场交易商协会": {
       "short": "交易商协会",
-      "aliases": ["中国银行间市场交易商协会", "交易商协会", "NAFMII"],
+      "aliases": [
+        "中国银行间市场交易商协会",
+        "交易商协会",
+        "NAFMII"
+      ],
       "category": "行业自律",
       "level": "中央"
     },
     "中国银行业协会": {
       "short": "银行业协会",
-      "aliases": ["中国银行业协会", "银行业协会", "CBA"],
+      "aliases": [
+        "中国银行业协会",
+        "银行业协会",
+        "CBA"
+      ],
       "category": "行业自律",
       "level": "中央"
     },
     "中国保险行业协会": {
       "short": "保险行业协会",
-      "aliases": ["中国保险行业协会", "保险行业协会", "IAC"],
+      "aliases": [
+        "中国保险行业协会",
+        "保险行业协会",
+        "IAC"
+      ],
       "category": "行业自律",
       "level": "中央"
     },
     "中国证券业协会": {
       "short": "证券业协会",
-      "aliases": ["中国证券业协会", "证券业协会", "SAC"],
+      "aliases": [
+        "中国证券业协会",
+        "证券业协会",
+        "SAC"
+      ],
       "category": "行业自律",
       "level": "中央"
     },
     "中国信托业协会": {
       "short": "信托业协会",
-      "aliases": ["中国信托业协会", "信托业协会"],
+      "aliases": [
+        "中国信托业协会",
+        "信托业协会"
+      ],
       "category": "行业自律",
       "level": "中央"
     },
     "上海证券交易所": {
       "short": "上交所",
-      "aliases": ["上海证券交易所", "上交所", "SSE", "Shanghai Stock Exchange"],
+      "aliases": [
+        "上海证券交易所",
+        "上交所",
+        "SSE",
+        "Shanghai Stock Exchange"
+      ],
       "category": "证券交易",
       "level": "中央"
     },
     "深圳证券交易所": {
       "short": "深交所",
-      "aliases": ["深圳证券交易所", "深交所", "SZSE", "Shenzhen Stock Exchange"],
+      "aliases": [
+        "深圳证券交易所",
+        "深交所",
+        "SZSE",
+        "Shenzhen Stock Exchange"
+      ],
       "category": "证券交易",
       "level": "中央"
     },
     "北京证券交易所": {
       "short": "北交所",
-      "aliases": ["北京证券交易所", "北交所", "BSE", "Beijing Stock Exchange"],
+      "aliases": [
+        "北京证券交易所",
+        "北交所",
+        "BSE",
+        "Beijing Stock Exchange"
+      ],
       "category": "证券交易",
       "level": "中央"
     },
     "上海银保监局": {
       "short": "上海银保监局",
-      "aliases": ["上海银保监局", "上海监管局", "上海局"],
+      "aliases": [
+        "上海银保监局",
+        "上海监管局",
+        "上海局"
+      ],
       "category": "地方监管",
       "level": "地方"
     },
     "江苏银保监局": {
       "short": "江苏银保监局",
-      "aliases": ["江苏银保监局", "江苏监管局", "江苏局"],
+      "aliases": [
+        "江苏银保监局",
+        "江苏监管局",
+        "江苏局"
+      ],
       "category": "地方监管",
       "level": "地方"
     },
     "浙江银保监局": {
       "short": "浙江银保监局",
-      "aliases": ["浙江银保监局", "浙江监管局", "浙江局"],
+      "aliases": [
+        "浙江银保监局",
+        "浙江监管局",
+        "浙江局"
+      ],
       "category": "地方监管",
       "level": "地方"
+    },
+    "证券交易所": {
+      "short": "证券交易所",
+      "aliases": [
+        "证券交易所",
+        "Stock Exchange"
+      ],
+      "category": "证券交易",
+      "level": "中央"
+    },
+    "证券登记结算机构": {
+      "short": "证券登记结算机构",
+      "aliases": [
+        "证券登记结算机构",
+        "证券登记结算"
+      ],
+      "category": "金融基础设施",
+      "level": "中央"
+    },
+    "期货交易所": {
+      "short": "期货交易所",
+      "aliases": [
+        "期货交易所",
+        "Futures Exchange"
+      ],
+      "category": "证券交易",
+      "level": "中央"
+    },
+    "期货结算机构": {
+      "short": "期货结算机构",
+      "aliases": [
+        "期货结算机构",
+        "期货结算"
+      ],
+      "category": "金融基础设施",
+      "level": "中央"
+    },
+    "证券监督管理机构": {
+      "short": "证券监管机构",
+      "aliases": [
+        "证券监督管理机构",
+        "证券监管机构"
+      ],
+      "category": "证券监管",
+      "level": "中央"
+    },
+    "保险监督管理机构": {
+      "short": "保险监管机构",
+      "aliases": [
+        "保险监督管理机构",
+        "保险监管机构"
+      ],
+      "category": "保险监管",
+      "level": "中央"
+    },
+    "反洗钱行政主管部门": {
+      "short": "反洗钱主管部门",
+      "aliases": [
+        "反洗钱行政主管部门",
+        "反洗钱主管部门"
+      ],
+      "category": "合规",
+      "level": "中央"
+    },
+    "国务院关税税则委员会": {
+      "short": "关税税则委员会",
+      "aliases": [
+        "国务院关税税则委员会",
+        "关税税则委员会"
+      ],
+      "category": "财税审计",
+      "level": "中央"
+    },
+    "国家统计局": {
+      "short": "国家统计局",
+      "aliases": [
+        "国家统计局",
+        "统计局",
+        "NBS",
+        "National Bureau of Statistics"
+      ],
+      "category": "统计",
+      "level": "中央"
+    },
+    "资产评估机构": {
+      "short": "资产评估机构",
+      "aliases": [
+        "资产评估机构",
+        "资产评估"
+      ],
+      "category": "金融服务",
+      "level": "中央"
+    },
+    "资信评级机构": {
+      "short": "资信评级机构",
+      "aliases": [
+        "资信评级机构",
+        "信用评级机构",
+        "资信评级",
+        "信用评级",
+        "Credit Rating Agency"
+      ],
+      "category": "金融服务",
+      "level": "中央"
+    },
+    "基金份额登记机构": {
+      "short": "基金份额登记机构",
+      "aliases": [
+        "基金份额登记机构",
+        "基金登记机构",
+        "TA"
+      ],
+      "category": "金融基础设施",
+      "level": "中央"
+    },
+    "国家畜禽遗传资源委员会": {
+      "short": "畜禽遗传资源委员会",
+      "aliases": [
+        "国家畜禽遗传资源委员会",
+        "畜禽遗传资源委员会"
+      ],
+      "category": "农业农村",
+      "level": "中央"
+    },
+    "征信机构": {
+      "short": "征信机构",
+      "aliases": [
+        "征信机构",
+        "征信公司",
+        "Credit Reporting Agency"
+      ],
+      "category": "征信管理",
+      "level": "中央"
     }
   },
-
   "abbreviations": {
     "CAR": "资本充足率",
     "NPL": "不良贷款率",

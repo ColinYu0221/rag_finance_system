@@ -402,13 +402,13 @@ class DocumentProcessor:
         else:
             chunks_text = self.splitter.split_text(full_text)
 
+        law_name, effective_date = self._extract_law_name_and_date(doc_info["title"], doc_type)
+        authority = self._extract_authority(doc_info["title"], doc_info.get("file_path", ""))
+
         chunks = []
         for idx, chunk_text in enumerate(chunks_text):
             article_match = re.search(r"第[零一二三四五六七八九十百\d]+条", chunk_text)
             article_num = article_match.group(0) if article_match else ""
-
-            law_name = self._extract_law_name(doc_info["title"], doc_type)
-            authority = self._extract_authority(doc_info["title"], doc_info.get("file_path", ""))
 
             chunks.append({
                 "chunk_id": f"{doc_info['title']}_chunk_{idx:04d}",
@@ -420,6 +420,8 @@ class DocumentProcessor:
                 "doc_type": doc_type,
                 "law_name": law_name,
                 "authority": authority,
+                "effective_date": effective_date,
+                "status": "有效",  # 多版本场景由 resolve_version_status 修正
             })
 
         logger.info(
@@ -427,11 +429,37 @@ class DocumentProcessor:
         )
         return chunks
 
-    def _extract_law_name(self, title: str, doc_type: str) -> str:
+    @staticmethod
+    def _extract_date_from_title(title: str) -> str:
+        """从文件名提取日期后缀 _YYYYMMDD → YYYY-MM-DD"""
+        m = re.search(r"_(\d{4})(\d{2})(\d{2})$", title)
+        if m:
+            return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+        return ""
+
+    def _extract_law_name_and_date(self, title: str, doc_type: str) -> tuple:
+        """从 title 同时提取法规名和生效日期。返回 (law_name, effective_date)"""
         if doc_type != "law":
-            return title
-        cleaned = re.sub(r"_\d{8}$", "", title)
-        return cleaned or title
+            return title, self._extract_date_from_title(title)
+        law_name = re.sub(r"_\d{8}$", "", title)
+        date_str = self._extract_date_from_title(title)
+        return (law_name or title, date_str)
+
+    @staticmethod
+    def resolve_version_status(all_chunks: list) -> list:
+        """同名法规多版本状态判定: 最新日期 → 有效，其余 → 已修订。"""
+        from collections import defaultdict
+        groups: dict[str, list] = defaultdict(list)
+        for c in all_chunks:
+            groups[c.get("law_name", "")].append(c)
+        for group in groups.values():
+            if not group:
+                continue
+            group.sort(key=lambda c: c.get("effective_date", ""), reverse=True)
+            latest_date = group[0].get("effective_date", "")
+            for c in group:
+                c["status"] = "有效" if c.get("effective_date", "") == latest_date else "已修订"
+        return all_chunks
 
     def _extract_authority(self, title: str, file_path: str) -> str:
         for kw in ["关于", "办公室关于"]:

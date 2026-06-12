@@ -92,7 +92,8 @@ class Retriever:
     # ── 各检索路独立方法（供并行调度）──
 
     def _vec_search(
-        self, query_vector: list, content_filters: list[dict], doc_type_filter: Optional[str], k: int
+        self, query_vector: list, content_filters: list[dict], doc_type_filter: Optional[str],
+        status_filter: Optional[str], k: int,
     ) -> List[Dict[str, Any]]:
         all_vec: dict[str, dict] = {}
         for cf in content_filters:
@@ -106,6 +107,7 @@ class Retriever:
                 doc_type_filter=where.get("doc_type"),
                 law_name_filter=where.get("law_name"),
                 authority_filter=where.get("authority"),
+                status_filter=status_filter,
             )
             for c in batch:
                 cid = c.get("chunk_id", "")
@@ -114,7 +116,8 @@ class Retriever:
         return sorted(all_vec.values(), key=lambda x: x.get("score", 0.0), reverse=True)[:k]
 
     def _ft_search(
-        self, query: str, content_filters: list[dict], doc_type_filter: Optional[str], k: int
+        self, query: str, content_filters: list[dict], doc_type_filter: Optional[str],
+        status_filter: Optional[str], k: int,
     ) -> List[Dict[str, Any]]:
         if self._has_es:
             backend = self.es_index
@@ -136,6 +139,7 @@ class Retriever:
                     doc_type_filter=where.get("doc_type"),
                     law_name_filter=where.get("law_name"),
                     authority_filter=where.get("authority"),
+                    status_filter=status_filter,
                 )
             except Exception as e:
                 logger.warning(f"全文检索查询失败: {e}")
@@ -148,7 +152,8 @@ class Retriever:
 
     def _term_search(
         self, query: str, source_filter: Optional[str], doc_type_filter: Optional[str],
-        law_name_filter: Optional[str], authority_filter: Optional[str], k: int
+        law_name_filter: Optional[str], authority_filter: Optional[str],
+        status_filter: Optional[str], k: int,
     ) -> List[Dict[str, Any]]:
         if not self._has_terms:
             return []
@@ -160,6 +165,7 @@ class Retriever:
                 doc_type_filter=doc_type_filter,
                 law_name_filter=law_name_filter,
                 authority_filter=authority_filter,
+                status_filter=status_filter,
             )
             return sorted(raw, key=lambda x: x.get("term_score", 0.0), reverse=True)[:k]
         except Exception as e:
@@ -175,8 +181,12 @@ class Retriever:
         doc_type_filter: Optional[str] = None,
         law_name_filter: Optional[str] = None,
         authority_filter: Optional[str] = None,
+        status_filter: Optional[str] = "有效",
     ) -> List[Dict[str, Any]]:
-        """端到端检索：多路并行召回 → RRF融合 → Reranker精排"""
+        """端到端检索：多路并行召回 → RRF融合 → Reranker精排
+
+        status_filter 默认 "有效"，传 None 展开全部历史版本。
+        """
         k = top_k or self.top_k
 
         logger.info(f"检索: {query[:50]}...")
@@ -201,13 +211,13 @@ class Retriever:
         # Step 2: 三路并行召回
         pool = _get_pool()
         futures = {
-            pool.submit(self._vec_search, query_vector, content_filters, doc_type_filter, k): "vec",
+            pool.submit(self._vec_search, query_vector, content_filters, doc_type_filter, status_filter, k): "vec",
         }
         if self._has_es or self._has_bm25:
-            futures[pool.submit(self._ft_search, query, content_filters, doc_type_filter, k)] = "ft"
+            futures[pool.submit(self._ft_search, query, content_filters, doc_type_filter, status_filter, k)] = "ft"
         if self._has_terms:
             futures[pool.submit(self._term_search, query, source_filter, doc_type_filter,
-                                law_name_filter, authority_filter, k)] = "term"
+                                law_name_filter, authority_filter, status_filter, k)] = "term"
 
         vec_candidates: list = []
         ft_candidates: list = []

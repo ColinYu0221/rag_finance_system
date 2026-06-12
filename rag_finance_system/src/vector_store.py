@@ -129,6 +129,8 @@ class VectorStore:
             FieldSchema(name="doc_type", dtype=DataType.VARCHAR, max_length=64),
             FieldSchema(name="law_name", dtype=DataType.VARCHAR, max_length=512),
             FieldSchema(name="authority", dtype=DataType.VARCHAR, max_length=512),
+            FieldSchema(name="effective_date", dtype=DataType.VARCHAR, max_length=16),
+            FieldSchema(name="status", dtype=DataType.VARCHAR, max_length=8),
         ]
         schema = CollectionSchema(fields=fields, description="金融法规向量库")
 
@@ -189,6 +191,7 @@ class VectorStore:
         doc_type_filter: Optional[str] = None,
         law_name_filter: Optional[str] = None,
         authority_filter: Optional[str] = None,
+        status_filter: Optional[str] = None,
     ) -> Optional[str]:
         clauses = []
         for key, value in {
@@ -196,6 +199,7 @@ class VectorStore:
             "doc_type": doc_type_filter,
             "law_name": law_name_filter,
             "authority": authority_filter,
+            "status": status_filter,
         }.items():
             if value:
                 clauses.append(f'{key} == "{self._escape_expr_value(str(value))}"')
@@ -275,6 +279,8 @@ class VectorStore:
                     "doc_type": self._clean_text(chunk.get("doc_type", "law"), 64),
                     "law_name": self._clean_text(chunk.get("law_name", ""), 512),
                     "authority": self._clean_text(chunk.get("authority", ""), 512),
+                    "effective_date": self._clean_text(chunk.get("effective_date", ""), 16),
+                    "status": self._clean_text(chunk.get("status", "有效"), 8),
                 })
 
             self._insert_batch(data=data)
@@ -293,6 +299,7 @@ class VectorStore:
         doc_type_filter: Optional[str] = None,
         law_name_filter: Optional[str] = None,
         authority_filter: Optional[str] = None,
+        status_filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         if not self.client.has_collection(self.collection_name):
             return []
@@ -304,6 +311,7 @@ class VectorStore:
             doc_type_filter=doc_type_filter,
             law_name_filter=law_name_filter,
             authority_filter=authority_filter,
+            status_filter=status_filter,
         )
 
         search_params = self._get_search_params()

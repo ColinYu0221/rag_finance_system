@@ -1,0 +1,1129 @@
+{
+  "_description": "词典自动抽取候选项 — 人工审核后合并到 finance_dictionary.json",
+  "_generated": "2026-06-09",
+  "_summary": {
+    "new_laws": 42,
+    "new_authorities": 99,
+    "new_terms": 28
+  },
+  "new_laws": {
+    "中华人民共和国个人独资企业法": {
+      "short": "个人独资企业法",
+      "aliases": [
+        "个人独资企业法"
+      ],
+      "category": "市场主体",
+      "latest_year": "1999",
+      "found_years": [
+        "1999"
+      ]
+    },
+    "中华人民共和国中小企业促进法": {
+      "short": "中小企业促进法",
+      "aliases": [
+        "中小企业促进法"
+      ],
+      "category": "市场主体",
+      "latest_year": "2017",
+      "found_years": [
+        "2017"
+      ]
+    },
+    "中华人民共和国乡村振兴促进法": {
+      "short": "乡村振兴促进法",
+      "aliases": [
+        "乡村振兴促进法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2021",
+      "found_years": [
+        "2021"
+      ]
+    },
+    "中华人民共和国产品质量法": {
+      "short": "产品质量法",
+      "aliases": [
+        "产品质量法"
+      ],
+      "category": "市场监管",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国价格法": {
+      "short": "价格法",
+      "aliases": [
+        "价格法"
+      ],
+      "category": "其他",
+      "latest_year": "1997",
+      "found_years": [
+        "1997"
+      ]
+    },
+    "中华人民共和国公路法": {
+      "short": "公路法",
+      "aliases": [
+        "公路法"
+      ],
+      "category": "基础设施",
+      "latest_year": "2017",
+      "found_years": [
+        "2017"
+      ]
+    },
+    "中华人民共和国农业技术推广法": {
+      "short": "农业技术推广法",
+      "aliases": [
+        "农业技术推广法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2024",
+      "found_years": [
+        "2024"
+      ]
+    },
+    "中华人民共和国农业机械化促进法": {
+      "short": "农业机械化促进法",
+      "aliases": [
+        "农业机械化促进法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国农产品质量安全法": {
+      "short": "农产品质量安全法",
+      "aliases": [
+        "农产品质量安全法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2022",
+      "found_years": [
+        "2022"
+      ]
+    },
+    "中华人民共和国农村土地承包法": {
+      "short": "农村土地承包法",
+      "aliases": [
+        "农村土地承包法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国农村集体经济组织法": {
+      "short": "农村集体经济组织法",
+      "aliases": [
+        "农村集体经济组织法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2024",
+      "found_years": [
+        "2024"
+      ]
+    },
+    "中华人民共和国农民专业合作社法": {
+      "short": "农民专业合作社法",
+      "aliases": [
+        "农民专业合作社法"
+      ],
+      "category": "其他",
+      "latest_year": "2017",
+      "found_years": [
+        "2017"
+      ]
+    },
+    "中华人民共和国出口管制法": {
+      "short": "出口管制法",
+      "aliases": [
+        "出口管制法"
+      ],
+      "category": "国际贸易",
+      "latest_year": "2020",
+      "found_years": [
+        "2020"
+      ]
+    },
+    "中华人民共和国动物防疫法": {
+      "short": "动物防疫法",
+      "aliases": [
+        "动物防疫法"
+      ],
+      "category": "环保",
+      "latest_year": "2015",
+      "found_years": [
+        "2015"
+      ]
+    },
+    "中华人民共和国台湾同胞投资保护法": {
+      "short": "台湾同胞投资保护法",
+      "aliases": [
+        "台湾同胞投资保护法"
+      ],
+      "category": "其他",
+      "latest_year": "2019",
+      "found_years": [
+        "2019"
+      ]
+    },
+    "中华人民共和国城市维护建设税法": {
+      "short": "城市维护建设税法",
+      "aliases": [
+        "城市维护建设税法"
+      ],
+      "category": "税务",
+      "latest_year": "2020",
+      "found_years": [
+        "2020"
+      ]
+    },
+    "中华人民共和国广告法": {
+      "short": "广告法",
+      "aliases": [
+        "广告法"
+      ],
+      "category": "市场监管",
+      "latest_year": "2021",
+      "found_years": [
+        "2015",
+        "2021"
+      ]
+    },
+    "中华人民共和国建筑法": {
+      "short": "建筑法",
+      "aliases": [
+        "建筑法"
+      ],
+      "category": "基础设施",
+      "latest_year": "2019",
+      "found_years": [
+        "2019"
+      ]
+    },
+    "中华人民共和国拍卖法": {
+      "short": "拍卖法",
+      "aliases": [
+        "拍卖法"
+      ],
+      "category": "其他",
+      "latest_year": "2015",
+      "found_years": [
+        "2015"
+      ]
+    },
+    "中华人民共和国招标投标法": {
+      "short": "招标投标法",
+      "aliases": [
+        "招标投标法"
+      ],
+      "category": "其他",
+      "latest_year": "2017",
+      "found_years": [
+        "2017"
+      ]
+    },
+    "中华人民共和国旅游法": {
+      "short": "旅游法",
+      "aliases": [
+        "旅游法"
+      ],
+      "category": "市场监管",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国标准化法": {
+      "short": "标准化法",
+      "aliases": [
+        "标准化法"
+      ],
+      "category": "市场监管",
+      "latest_year": "2017",
+      "found_years": [
+        "2017"
+      ]
+    },
+    "中华人民共和国民用航空法": {
+      "short": "民用航空法",
+      "aliases": [
+        "民用航空法"
+      ],
+      "category": "其他",
+      "latest_year": "2021",
+      "found_years": [
+        "2021"
+      ]
+    },
+    "中华人民共和国港口法": {
+      "short": "港口法",
+      "aliases": [
+        "港口法"
+      ],
+      "category": "基础设施",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国烟叶税法": {
+      "short": "烟叶税法",
+      "aliases": [
+        "烟叶税法"
+      ],
+      "category": "税务",
+      "latest_year": "2017",
+      "found_years": [
+        "2017"
+      ]
+    },
+    "中华人民共和国环境保护税法": {
+      "short": "环境保护税法",
+      "aliases": [
+        "环境保护税法"
+      ],
+      "category": "税务",
+      "latest_year": "2025",
+      "found_years": [
+        "2025"
+      ]
+    },
+    "中华人民共和国电力法": {
+      "short": "电力法",
+      "aliases": [
+        "电力法"
+      ],
+      "category": "基础设施",
+      "latest_year": "2018",
+      "found_years": [
+        "2015",
+        "2018"
+      ]
+    },
+    "中华人民共和国畜牧法": {
+      "short": "畜牧法",
+      "aliases": [
+        "畜牧法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2022",
+      "found_years": [
+        "2015",
+        "2022"
+      ]
+    },
+    "中华人民共和国粮食安全保障法": {
+      "short": "粮食安全保障法",
+      "aliases": [
+        "粮食安全保障法"
+      ],
+      "category": "农业农村",
+      "latest_year": "2023",
+      "found_years": [
+        "2023"
+      ]
+    },
+    "中华人民共和国统计法": {
+      "short": "统计法",
+      "aliases": [
+        "统计法"
+      ],
+      "category": "统计",
+      "latest_year": "2024",
+      "found_years": [
+        "2024"
+      ]
+    },
+    "中华人民共和国耕地占用税法": {
+      "short": "耕地占用税法",
+      "aliases": [
+        "耕地占用税法"
+      ],
+      "category": "税务",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国航道法": {
+      "short": "航道法",
+      "aliases": [
+        "航道法"
+      ],
+      "category": "基础设施",
+      "latest_year": "2016",
+      "found_years": [
+        "2016"
+      ]
+    },
+    "中华人民共和国船舶吨税法": {
+      "short": "船舶吨税法",
+      "aliases": [
+        "船舶吨税法"
+      ],
+      "category": "税务",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国计量法": {
+      "short": "计量法",
+      "aliases": [
+        "计量法"
+      ],
+      "category": "市场监管",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国资产评估法": {
+      "short": "资产评估法",
+      "aliases": [
+        "资产评估法"
+      ],
+      "category": "其他",
+      "latest_year": "2016",
+      "found_years": [
+        "2016"
+      ]
+    },
+    "中华人民共和国资源税法": {
+      "short": "资源税法",
+      "aliases": [
+        "资源税法"
+      ],
+      "category": "税务",
+      "latest_year": "2019",
+      "found_years": [
+        "2019"
+      ]
+    },
+    "中华人民共和国车船税法": {
+      "short": "车船税法",
+      "aliases": [
+        "车船税法"
+      ],
+      "category": "税务",
+      "latest_year": "2019",
+      "found_years": [
+        "2011",
+        "2019"
+      ]
+    },
+    "中华人民共和国车辆购置税法": {
+      "short": "车辆购置税法",
+      "aliases": [
+        "车辆购置税法"
+      ],
+      "category": "税务",
+      "latest_year": "2018",
+      "found_years": [
+        "2018"
+      ]
+    },
+    "中华人民共和国进出口商品检验法": {
+      "short": "进出口商品检验法",
+      "aliases": [
+        "进出口商品检验法"
+      ],
+      "category": "国际贸易",
+      "latest_year": "2021",
+      "found_years": [
+        "2021"
+      ]
+    },
+    "中华人民共和国邮政法": {
+      "short": "邮政法",
+      "aliases": [
+        "邮政法"
+      ],
+      "category": "基础设施",
+      "latest_year": "2015",
+      "found_years": [
+        "2015"
+      ]
+    },
+    "中华人民共和国防洪法": {
+      "short": "防洪法",
+      "aliases": [
+        "防洪法"
+      ],
+      "category": "环保",
+      "latest_year": "2016",
+      "found_years": [
+        "2016"
+      ]
+    },
+    "批准广东省经济特区条例的决议": {
+      "short": "批准广东省经济特区条例的决议",
+      "aliases": [
+        "批准广东省经济特区条例的决议"
+      ],
+      "category": "其他",
+      "latest_year": "1980",
+      "found_years": [
+        "1980"
+      ]
+    }
+  },
+  "new_authorities": {
+    "国务院民用航空主管部": {
+      "frequency": 86,
+      "category": "其他"
+    },
+    "人民政府农业农村主管部门": {
+      "frequency": 78,
+      "category": "其他"
+    },
+    "证券登记结算机构": {
+      "frequency": 72,
+      "category": "证券监管"
+    },
+    "证券交易所": {
+      "frequency": 72,
+      "category": "证券监管"
+    },
+    "国务院有关部": {
+      "frequency": 60,
+      "category": "其他"
+    },
+    "国务院农业农村主管部": {
+      "frequency": 60,
+      "category": "其他"
+    },
+    "国务院财政部": {
+      "frequency": 58,
+      "category": "财税审计"
+    },
+    "国务院专利行政部": {
+      "frequency": 53,
+      "category": "其他"
+    },
+    "期货结算机构": {
+      "frequency": 43,
+      "category": "金融基础设施"
+    },
+    "国务院交通主管部": {
+      "frequency": 41,
+      "category": "其他"
+    },
+    "国务院兽医主管部": {
+      "frequency": 41,
+      "category": "其他"
+    },
+    "国务院反洗钱行政主管部": {
+      "frequency": 41,
+      "category": "其他"
+    },
+    "国务院对外贸易主管部": {
+      "frequency": 36,
+      "category": "其他"
+    },
+    "国务院授权的部": {
+      "frequency": 35,
+      "category": "其他"
+    },
+    "国务院畜牧兽医行政主管部": {
+      "frequency": 34,
+      "category": "其他"
+    },
+    "人民政府畜牧兽医行政主管部门": {
+      "frequency": 28,
+      "category": "其他"
+    },
+    "国务院对外贸易主管部门": {
+      "frequency": 26,
+      "category": "其他"
+    },
+    "国务院其他有关部": {
+      "frequency": 23,
+      "category": "其他"
+    },
+    "国务院农业农村主管部门": {
+      "frequency": 23,
+      "category": "其他"
+    },
+    "国务院工商行政管理部": {
+      "frequency": 22,
+      "category": "其他"
+    },
+    "国务院标准化行政主管部": {
+      "frequency": 21,
+      "category": "其他"
+    },
+    "由国务院民用航空主管部门": {
+      "frequency": 21,
+      "category": "其他"
+    },
+    "国务院邮政管理部": {
+      "frequency": 21,
+      "category": "其他"
+    },
+    "由有关主管部门": {
+      "frequency": 20,
+      "category": "其他"
+    },
+    "由保险监督管理机构": {
+      "frequency": 17,
+      "category": "保险监管"
+    },
+    "由国务院证券监督管理机构": {
+      "frequency": 17,
+      "category": "证券监管"
+    },
+    "国家畜禽遗传资源委员会": {
+      "frequency": 16,
+      "category": "其他"
+    },
+    "国家统计局": {
+      "frequency": 16,
+      "category": "其他"
+    },
+    "并报国务院证券监督管理机构": {
+      "frequency": 16,
+      "category": "证券监管"
+    },
+    "由国务院农业农村主管部门": {
+      "frequency": 15,
+      "category": "其他"
+    },
+    "向国务院民用航空主管部门": {
+      "frequency": 15,
+      "category": "其他"
+    },
+    "证券监督管理机构": {
+      "frequency": 15,
+      "category": "证券监管"
+    },
+    "国务院有关行政主管部": {
+      "frequency": 14,
+      "category": "其他"
+    },
+    "国务院信息产业主管部": {
+      "frequency": 14,
+      "category": "其他"
+    },
+    "国务院水行政主管部": {
+      "frequency": 14,
+      "category": "其他"
+    },
+    "经国务院证券监督管理机构": {
+      "frequency": 14,
+      "category": "证券监管"
+    },
+    "地方人民政府交通主管部门": {
+      "frequency": 13,
+      "category": "其他"
+    },
+    "国国务院民用航空主管部门": {
+      "frequency": 13,
+      "category": "其他"
+    },
+    "保险监督管理机构": {
+      "frequency": 12,
+      "category": "保险监管"
+    },
+    "资产评估机构": {
+      "frequency": 12,
+      "category": "金融服务"
+    },
+    "国务院民用航空主管部门": {
+      "frequency": 12,
+      "category": "其他"
+    },
+    "由国务院保险监督管理机构": {
+      "frequency": 11,
+      "category": "保险监管"
+    },
+    "由交通主管部门": {
+      "frequency": 11,
+      "category": "其他"
+    },
+    "国务院交通运输主管部": {
+      "frequency": 11,
+      "category": "其他"
+    },
+    "由证券交易所": {
+      "frequency": 11,
+      "category": "证券监管"
+    },
+    "国务院关税税则委员会": {
+      "frequency": 10,
+      "category": "其他"
+    },
+    "由国务院银行业监督管理机构": {
+      "frequency": 10,
+      "category": "银行保险监管"
+    },
+    "由旅游主管部门": {
+      "frequency": 10,
+      "category": "其他"
+    },
+    "国务院标准化行政主管部门": {
+      "frequency": 10,
+      "category": "其他"
+    },
+    "国务院畜牧兽医行政主管部门": {
+      "frequency": 10,
+      "category": "其他"
+    },
+    "批准的国务院证券监督管理机构": {
+      "frequency": 10,
+      "category": "证券监管"
+    },
+    "应当经国务院证券监督管理机构": {
+      "frequency": 9,
+      "category": "证券监管"
+    },
+    "国务院兽医主管部门": {
+      "frequency": 9,
+      "category": "其他"
+    },
+    "当按照国务院兽医主管部门": {
+      "frequency": 9,
+      "category": "其他"
+    },
+    "反洗钱行政主管部门": {
+      "frequency": 9,
+      "category": "其他"
+    },
+    "期货交易所": {
+      "frequency": 9,
+      "category": "证券交易"
+    },
+    "向国务院证券监督管理机构": {
+      "frequency": 9,
+      "category": "证券监管"
+    },
+    "必须经国务院证券监督管理机构": {
+      "frequency": 9,
+      "category": "证券监管"
+    },
+    "国务院有关主管部": {
+      "frequency": 8,
+      "category": "其他"
+    },
+    "资信评级机构": {
+      "frequency": 8,
+      "category": "金融服务"
+    },
+    "由国务院反洗钱行政主管部门": {
+      "frequency": 8,
+      "category": "其他"
+    },
+    "旅游主管部门": {
+      "frequency": 8,
+      "category": "其他"
+    },
+    "国务院物价行政主管部": {
+      "frequency": 8,
+      "category": "其他"
+    },
+    "国务院计量行政部": {
+      "frequency": 8,
+      "category": "其他"
+    },
+    "应当向国务院证券监督管理机构": {
+      "frequency": 8,
+      "category": "证券监管"
+    },
+    "由证券监督管理机构": {
+      "frequency": 8,
+      "category": "证券监管"
+    },
+    "基金份额登记机构": {
+      "frequency": 8,
+      "category": "金融基础设施"
+    },
+    "国务院市场监督管理部": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "国务院价格主管部": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "政府价格主管部门": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "当按照国务院保险监督管理机构": {
+      "frequency": 7,
+      "category": "保险监管"
+    },
+    "办法由国务院证券监督管理机构": {
+      "frequency": 7,
+      "category": "证券监管"
+    },
+    "规或者国务院证券监督管理机构": {
+      "frequency": 7,
+      "category": "证券监管"
+    },
+    "公路管理机构": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "辖市人民政府兽医主管部门": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "由国务院对外贸易主管部门": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "国务院有关行政主管部门": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "海事管理机构": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "主管部门或者航道管理机构": {
+      "frequency": 7,
+      "category": "其他"
+    },
+    "法规和国务院证券监督管理机构": {
+      "frequency": 7,
+      "category": "证券监管"
+    },
+    "国务院药品监督管理部": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "式或者国务院证券监督管理机构": {
+      "frequency": 6,
+      "category": "证券监管"
+    },
+    "由国务院交通主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "交通主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "国务院及其有关部": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "国务院农业行政主管部": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "地方人民政府兽医主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "国务院有关金融管理部": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "应当经国务院期货监督管理机构": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "方人民政府标准化行政主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "经国务院民用航空主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "生态环境主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "国务院电力管理部": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "报国务院物价行政主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "报有管理权的物价行政主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "和国务院农业农村主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "人民政府交通运输主管部门": {
+      "frequency": 6,
+      "category": "其他"
+    },
+    "国务院税务主管部": {
+      "frequency": 5,
+      "category": "财税审计"
+    },
+    "经国务院保险监督管理机构": {
+      "frequency": 5,
+      "category": "保险监管"
+    }
+  },
+  "new_terms": {
+    "管理机构": {
+      "tfidf_weight": 0.0312,
+      "aliases": [
+        "管理机构"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "管理部": {
+      "tfidf_weight": 0.0141,
+      "aliases": [
+        "管理部"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "监督管理": {
+      "tfidf_weight": 0.0132,
+      "aliases": [
+        "监督管理"
+      ],
+      "definition": "为实现目标而进行的规划、组织、领导和控制活动",
+      "category": "其他",
+      "suggested_definition": "为实现目标而进行的规划、组织、领导和控制活动"
+    },
+    "证券交易": {
+      "tfidf_weight": 0.011,
+      "aliases": [
+        "证券交易"
+      ],
+      "definition": "买卖双方进行资产交换的行为",
+      "category": "证券监管",
+      "suggested_definition": "买卖双方进行资产交换的行为"
+    },
+    "保险人": {
+      "tfidf_weight": 0.0109,
+      "aliases": [
+        "保险人"
+      ],
+      "definition": "",
+      "category": "保险监管",
+      "suggested_definition": "[需人工补充]"
+    },
+    "证券公司": {
+      "tfidf_weight": 0.0084,
+      "aliases": [
+        "证券公司"
+      ],
+      "definition": "",
+      "category": "证券监管",
+      "suggested_definition": "[需人工补充]"
+    },
+    "公司章程": {
+      "tfidf_weight": 0.0083,
+      "aliases": [
+        "公司章程"
+      ],
+      "definition": "",
+      "category": "公司法",
+      "suggested_definition": "[需人工补充]"
+    },
+    "管理人员": {
+      "tfidf_weight": 0.008,
+      "aliases": [
+        "管理人员"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "股东会": {
+      "tfidf_weight": 0.0079,
+      "aliases": [
+        "股东会"
+      ],
+      "definition": "",
+      "category": "公司法",
+      "suggested_definition": "[需人工补充]"
+    },
+    "合法权益": {
+      "tfidf_weight": 0.0069,
+      "aliases": [
+        "合法权益"
+      ],
+      "definition": "企业资产扣除负债后的剩余利益",
+      "category": "其他",
+      "suggested_definition": "企业资产扣除负债后的剩余利益"
+    },
+    "许可证": {
+      "tfidf_weight": 0.0068,
+      "aliases": [
+        "许可证"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "被保险人": {
+      "tfidf_weight": 0.0068,
+      "aliases": [
+        "被保险人"
+      ],
+      "definition": "",
+      "category": "保险监管",
+      "suggested_definition": "[需人工补充]"
+    },
+    "法律责任": {
+      "tfidf_weight": 0.0062,
+      "aliases": [
+        "法律责任"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "金融机构": {
+      "tfidf_weight": 0.0055,
+      "aliases": [
+        "金融机构"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "公司债券": {
+      "tfidf_weight": 0.0047,
+      "aliases": [
+        "公司债券"
+      ],
+      "definition": "发行人向投资者发行的债务凭证",
+      "category": "证券监管",
+      "suggested_definition": "发行人向投资者发行的债务凭证"
+    },
+    "税务机关": {
+      "tfidf_weight": 0.0046,
+      "aliases": [
+        "税务机关"
+      ],
+      "definition": "",
+      "category": "税务",
+      "suggested_definition": "[需人工补充]"
+    },
+    "信息处理": {
+      "tfidf_weight": 0.0044,
+      "aliases": [
+        "信息处理"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "会计报告": {
+      "tfidf_weight": 0.0044,
+      "aliases": [
+        "会计报告"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "投保人": {
+      "tfidf_weight": 0.0042,
+      "aliases": [
+        "投保人"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "发行人": {
+      "tfidf_weight": 0.0038,
+      "aliases": [
+        "发行人"
+      ],
+      "definition": "",
+      "category": "证券监管",
+      "suggested_definition": "[需人工补充]"
+    },
+    "抵押权": {
+      "tfidf_weight": 0.0037,
+      "aliases": [
+        "抵押权"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "上市公司": {
+      "tfidf_weight": 0.0037,
+      "aliases": [
+        "上市公司"
+      ],
+      "definition": "",
+      "category": "公司法",
+      "suggested_definition": "[需人工补充]"
+    },
+    "保险公司": {
+      "tfidf_weight": 0.0036,
+      "aliases": [
+        "保险公司"
+      ],
+      "definition": "",
+      "category": "保险监管",
+      "suggested_definition": "[需人工补充]"
+    },
+    "交易者": {
+      "tfidf_weight": 0.0035,
+      "aliases": [
+        "交易者"
+      ],
+      "definition": "",
+      "category": "其他",
+      "suggested_definition": "[需人工补充]"
+    },
+    "投资者": {
+      "tfidf_weight": 0.0035,
+      "aliases": [
+        "投资者"
+      ],
+      "definition": "",
+      "category": "消费者保护",
+      "suggested_definition": "[需人工补充]"
+    },
+    "保险费": {
+      "tfidf_weight": 0.0032,
+      "aliases": [
+        "保险费"
+      ],
+      "definition": "",
+      "category": "保险监管",
+      "suggested_definition": "[需人工补充]"
+    },
+    "保险金": {
+      "tfidf_weight": 0.0032,
+      "aliases": [
+        "保险金"
+      ],
+      "definition": "",
+      "category": "保险监管",
+      "suggested_definition": "[需人工补充]"
+    },
+    "消费者": {
+      "tfidf_weight": 0.0032,
+      "aliases": [
+        "消费者"
+      ],
+      "definition": "",
+      "category": "消费者保护",
+      "suggested_definition": "[需人工补充]"
+    }
+  }
+}
