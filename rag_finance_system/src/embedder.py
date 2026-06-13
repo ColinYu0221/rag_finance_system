@@ -5,6 +5,7 @@ Embedding模型封装（bge-small-zh-v1.5）
 """
 
 import os
+from pathlib import Path
 from typing import List, Union
 import torch.nn.functional as F
 import torch
@@ -12,7 +13,7 @@ from loguru import logger
 from dotenv import load_dotenv
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-load_dotenv()
+load_dotenv(dotenv_path=str(Path(__file__).resolve().parent.parent / ".env"))
 
 EMBEDDING_MODEL_PATH = os.getenv("EMBEDDING_MODEL_PATH", "BAAI/bge-small-zh-v1.5")
 RERANKER_MODEL_PATH = os.getenv("RERANKER_MODEL_PATH", "BAAI/bge-reranker-v2-m3")
@@ -84,16 +85,18 @@ class Reranker:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.batch_size = batch_size
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
+        # 相对路径 → src/ 向上一级 (rag_finance_system/) 再拼 models/
+        _mp = Path(model_path)
+        if not _mp.is_absolute():
+            _mp = (Path(__file__).resolve().parent.parent / model_path).resolve()
+        model_path = str(_mp)
+        logger.info(f"Reranker 模型路径: {model_path}")
 
-        load_kwargs = {}
-        if self.device == "cuda":
-            load_kwargs["dtype"] = torch.float16
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
 
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_path,
-            local_files_only=True,
-            **load_kwargs
+            torch_dtype=torch.float16 if self.device == "cuda" else None,
         ).to(self.device)
         self.model.eval()
 

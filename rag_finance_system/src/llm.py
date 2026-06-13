@@ -5,14 +5,22 @@ LLM推理模块
 """
 
 import os
+from pathlib import Path
 from typing import List, Optional, Generator
 
 from loguru import logger
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=str(Path(__file__).resolve().parent.parent / ".env"))
 
-LLM_MODEL_PATH = os.getenv("LLM_MODEL_PATH", "./models/Qwen2.5-7B-Int4")
+_LLM_MODEL_PATH = os.getenv("LLM_MODEL_PATH", "./models/Qwen2.5-7B-Int4")
+# 相对路径 → 基于 llm.py 所在目录解析
+_mp = Path(_LLM_MODEL_PATH)
+if not _mp.is_absolute():
+    _mp = (Path(__file__).resolve().parent.parent / _LLM_MODEL_PATH).resolve().as_posix()
+    LLM_MODEL_PATH = str(_mp)
+else:
+    LLM_MODEL_PATH = _LLM_MODEL_PATH
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")

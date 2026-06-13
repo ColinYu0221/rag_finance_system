@@ -36,17 +36,26 @@ def _rrf_fusion(
     key: str = "chunk_id",
     k: int = RRF_K,
     top_k: int = TOP_K,
+    weights: Optional[List[float]] = None,
 ) -> List[Dict[str, Any]]:
-    """RRF (Reciprocal Rank Fusion) 融合多路召回结果。"""
+    """加权 RRF (Reciprocal Rank Fusion) 融合多路召回结果。
+
+    score(d) = sum_{r in rankers} weight_r / (k + rank_r(d))
+    """
+    if weights is None:
+        weights = [1.0] * len(candidate_lists)
+    elif len(weights) < len(candidate_lists):
+        weights = list(weights) + [1.0] * (len(candidate_lists) - len(weights))
+
     rrf_scores: Dict[str, float] = {}
     merged: Dict[str, Dict[str, Any]] = {}
 
-    for candidates in candidate_lists:
+    for w, candidates in zip(weights, candidate_lists):
         for rank, c in enumerate(candidates, start=1):
             cid = c.get(key, "")
             if not cid:
                 continue
-            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + 1.0 / (k + rank)
+            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + w / (k + rank)
             if cid not in merged:
                 merged[cid] = c
 
@@ -139,7 +148,6 @@ class Retriever:
                     doc_type_filter=where.get("doc_type"),
                     law_name_filter=where.get("law_name"),
                     authority_filter=where.get("authority"),
-                    status_filter=status_filter,
                 )
             except Exception as e:
                 logger.warning(f"全文检索查询失败: {e}")
@@ -165,7 +173,6 @@ class Retriever:
                 doc_type_filter=doc_type_filter,
                 law_name_filter=law_name_filter,
                 authority_filter=authority_filter,
-                status_filter=status_filter,
             )
             return sorted(raw, key=lambda x: x.get("term_score", 0.0), reverse=True)[:k]
         except Exception as e:
@@ -240,16 +247,19 @@ class Retriever:
                 term_candidates = result
                 logger.info(f"术语索引召回 {len(term_candidates)} 条")
 
-        # Step 3: RRF 多路融合
+        # Step 3: 加权 RRF 多路融合（BM25/ES 权重 3x，向量 1x，术语 2x）
         recall_lists: list = [vec_candidates]
+        recall_weights: list = [1.0]
         if ft_candidates:
             recall_lists.append(ft_candidates)
+            recall_weights.append(3.0)
         if term_candidates:
             recall_lists.append(term_candidates)
+            recall_weights.append(2.0)
 
         if len(recall_lists) >= 2:
-            candidates = _rrf_fusion(*recall_lists, top_k=k)
-            logger.info(f"RRF 融合 ({len(recall_lists)} 路) 后 {len(candidates)} 条")
+            candidates = _rrf_fusion(*recall_lists, top_k=k, weights=recall_weights)
+            logger.info(f"加权 RRF 融合 ({len(recall_lists)} 路) 后 {len(candidates)} 条")
         else:
             candidates = recall_lists[0]
 
