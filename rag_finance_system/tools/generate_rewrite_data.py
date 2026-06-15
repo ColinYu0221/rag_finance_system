@@ -26,8 +26,8 @@ generate_rewrite_data.py
     --num-questions 1000
 
   # 通用参数
-  --api {deepseek,qwen}    选择 API（默认 deepseek）
-  --model MODEL            模型名（deepseek 默认 deepseek-chat）
+  --api {deepseek,qwen}    选择 API（默认 qwen）
+  --model MODEL            模型名（qwen 默认 qwen-plus）
   --batch-size N           每批生成数量（默认 20）
   --resume                  从已有输出文件断点续传
   --temperature FLOAT      生成温度（默认 0.3，正向模式稍高增加多样性）
@@ -316,8 +316,8 @@ def main():
                         help="输出 JSONL 文件路径（默认 data/rewrite_pairs.jsonl）")
     parser.add_argument("-n", "--num-questions", type=int, default=None,
                         help="reverse 模式下目标训练数据总量")
-    parser.add_argument("--api", choices=["deepseek", "qwen"], default="deepseek",
-                        help="使用的 LLM API（默认 deepseek）")
+    parser.add_argument("--api", choices=["deepseek", "qwen"], default="qwen",
+                        help="使用的 LLM API（默认 qwen）")
     parser.add_argument("--model", type=str, default=None,
                         help="模型名（deepseek 默认 deepseek-chat，qwen 默认 qwen-plus）")
     parser.add_argument("--batch-size", type=int, default=20,

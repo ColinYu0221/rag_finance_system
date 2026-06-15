@@ -12,8 +12,8 @@ from openai import OpenAI
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url=os.getenv("DEEPSEEK_API_BASE_URL", "https://api.deepseek.com"),
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    base_url=os.getenv("DASHSCOPE_API_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
 )
 
 TESTFILES_DIR = os.path.normpath(
@@ -64,7 +64,7 @@ def generate_questions_batch(file_batch, target_count):
 请生成 {target_count} 条问题："""
 
     response = client.chat.completions.create(
-        model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+        model=os.getenv("DASHSCOPE_MODEL", "qwen-plus"),
         messages=[{"role": "user", "content": prompt}],
         max_tokens=4096,
         temperature=0.8,  # 稍微提高温度以增加多样性

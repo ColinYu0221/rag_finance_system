@@ -28,9 +28,23 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "api_ok" not in st.session_state:
     st.session_state.api_ok = None
+if "conversation_id" not in st.session_state:
+    st.session_state.conversation_id = None
+if "conversation_list" not in st.session_state:
+    st.session_state.conversation_list = []
+if "mysql_ok" not in st.session_state:
+    st.session_state.mysql_ok = None
+if "last_health_check" not in st.session_state:
+    st.session_state.last_health_check = 0
+if "favorites_list" not in st.session_state:
+    st.session_state.favorites_list = None
+if "last_fav_fetch" not in st.session_state:
+    st.session_state.last_fav_fetch = 0
 
 
 # ===== HTTP Helper 函数 =====
+
+HEALTH_CHECK_INTERVAL = 30  # 秒
 
 def check_api_health(api_base: str) -> bool:
     try:
@@ -38,6 +52,31 @@ def check_api_health(api_base: str) -> bool:
         return r.status_code == 200
     except (ConnectionError, Timeout, RequestException):
         return False
+
+
+def check_mysql(api_base: str) -> bool:
+    try:
+        r = requests.get(f"{api_base}/api/conversations", timeout=5)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def cached_health_check(api_base: str) -> tuple[bool, bool]:
+    """带缓存的健康检查，30秒内不重复请求。返回 (api_ok, mysql_ok)。"""
+    now = time.time()
+    if now - st.session_state.last_health_check < HEALTH_CHECK_INTERVAL:
+        return st.session_state.api_ok, st.session_state.mysql_ok
+
+    api_ok = check_api_health(api_base)
+    mysql_ok = False
+    if api_ok:
+        mysql_ok = check_mysql(api_base)
+
+    st.session_state.api_ok = api_ok
+    st.session_state.mysql_ok = mysql_ok
+    st.session_state.last_health_check = now
+    return api_ok, mysql_ok
 
 
 def upload_file(api_base: str, file_bytes: bytes, filename: str, doc_type: str) -> dict:
@@ -61,29 +100,6 @@ def index_file(api_base: str, file_path: str, doc_type: str) -> dict:
     return resp.json()
 
 
-def ask_question(
-    api_base: str,
-    question: str,
-    doc_type_filter: str | None,
-    use_reranker: bool,
-    use_query_rewrite: bool,
-) -> dict:
-    payload: dict = {
-        "question": question,
-        "use_reranker": use_reranker,
-        "use_query_rewrite": use_query_rewrite,
-    }
-    if doc_type_filter:
-        payload["doc_type_filter"] = doc_type_filter
-    resp = requests.post(
-        f"{api_base}/api/qa",
-        json=payload,
-        timeout=120,
-    )
-    resp.raise_for_status()
-    return resp.json()
-
-
 def _handle_api_error(exc: RequestException) -> str:
     if hasattr(exc, "response") and exc.response is not None:
         try:
@@ -98,9 +114,87 @@ def _handle_api_error(exc: RequestException) -> str:
     return f"请求失败: {exc}"
 
 
+# ===== 对话历史 API =====
+
+def fetch_conversations(api_base: str) -> list[dict]:
+    try:
+        r = requests.get(f"{api_base}/api/conversations", timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return []
+
+
+def create_conversation(api_base: str, title: str = "新对话") -> dict | None:
+    try:
+        r = requests.post(f"{api_base}/api/conversations", json={"title": title}, timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return None
+
+
+def fetch_conversation_detail(api_base: str, conv_id: str) -> dict | None:
+    try:
+        r = requests.get(f"{api_base}/api/conversations/{conv_id}", timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return None
+
+
+def delete_conversation_api(api_base: str, conv_id: str) -> bool:
+    try:
+        r = requests.delete(f"{api_base}/api/conversations/{conv_id}", timeout=5)
+        r.raise_for_status()
+        return True
+    except Exception:
+        return False
+
+
+# ===== 收藏 API =====
+
+def add_favorite(api_base: str, fav_type: str, conversation_id: str | None = None,
+                 message_id: str | None = None, source_data: dict | None = None) -> dict | None:
+    try:
+        payload: dict = {"fav_type": fav_type}
+        if conversation_id:
+            payload["conversation_id"] = conversation_id
+        if message_id:
+            payload["message_id"] = message_id
+        if source_data:
+            payload["source_data"] = source_data
+        r = requests.post(f"{api_base}/api/favorites", json=payload, timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return None
+
+
+def fetch_favorites(api_base: str, fav_type: str | None = None) -> list[dict]:
+    try:
+        params = {}
+        if fav_type:
+            params["fav_type"] = fav_type
+        r = requests.get(f"{api_base}/api/favorites", params=params, timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return []
+
+
+def delete_favorite(api_base: str, fav_id: str) -> bool:
+    try:
+        r = requests.delete(f"{api_base}/api/favorites/{fav_id}", timeout=5)
+        r.raise_for_status()
+        return True
+    except Exception:
+        return False
+
+
 # ===== 渲染 Helper =====
 
-def render_sources(sources: list[dict]):
+def render_sources(sources: list[dict], msg_idx: int = 0, conv_id: str | None = None):
     if not sources:
         return
     with st.expander(f"📎 查看溯源条文 ({len(sources)} 条)"):
@@ -111,6 +205,21 @@ def render_sources(sources: list[dict]):
                 f":{conf_color}[相关度 {src['score']:.2%}]"
             )
             st.text(src["text"][:200] + "..." if len(src["text"]) > 200 else src["text"])
+            # 收藏单条条文按钮
+            if st.session_state.mysql_ok:
+                col_spacer, col_btn = st.columns([8, 1])
+                with col_btn:
+                    if st.button("⭐", key=f"fav_src_{msg_idx}_{i}",
+                                 help="收藏此条文"):
+                        result = add_favorite(
+                            st.session_state.api_base_url,
+                            fav_type="source",
+                            conversation_id=conv_id,
+                            source_data=src,
+                        )
+                        if result:
+                            st.toast("已收藏", icon="⭐")
+                            st.session_state.favorites_list = None
             if i < len(sources):
                 st.divider()
 
@@ -135,15 +244,22 @@ with st.sidebar:
     )
     if url_input.strip() != st.session_state.api_base_url:
         st.session_state.api_base_url = url_input.strip()
-        st.session_state.api_ok = None  # 重置健康状态
+        st.session_state.api_ok = None
+        st.session_state.mysql_ok = None
 
-    # 健康检查
+    # 健康检查（30秒缓存）
     api_base = st.session_state.api_base_url
-    st.session_state.api_ok = check_api_health(api_base)
-    if st.session_state.api_ok:
+    api_ok, mysql_ok = cached_health_check(api_base)
+    if api_ok:
         st.success("API 服务正常", icon="✅")
     else:
         st.warning("API 服务未响应，请启动 FastAPI 后刷新", icon="⚠️")
+
+    if api_ok:
+        if mysql_ok:
+            st.success("MySQL 连接正常", icon="✅")
+        else:
+            st.info("MySQL 未连接，对话历史/收藏功能不可用", icon="ℹ️")
 
     st.divider()
 
@@ -159,6 +275,85 @@ with st.sidebar:
         help="限定本次问答的检索范围",
     )
 
+    # ── 对话历史 ──
+    if st.session_state.mysql_ok:
+        st.divider()
+        st.subheader("💬 对话历史")
+
+        col_new, col_refresh = st.columns([2, 1])
+        with col_new:
+            if st.button("📝 新对话", type="primary", use_container_width=True):
+                st.session_state.messages = []
+                st.session_state.conversation_id = None
+        with col_refresh:
+            if st.button("🔄", use_container_width=True, help="刷新列表"):
+                st.session_state.conversation_list = fetch_conversations(api_base)
+                st.session_state.favorites_list = None
+
+        # 懒加载对话列表（仅首次和刷新时拉取）
+        if not st.session_state.conversation_list:
+            st.session_state.conversation_list = fetch_conversations(api_base)
+
+        for conv in st.session_state.conversation_list:
+            col_title, col_del = st.columns([5, 1])
+            with col_title:
+                is_active = conv["id"] == st.session_state.conversation_id
+                label = f"{'🟢 ' if is_active else ''}{conv['title'][:30]}"
+                if st.button(label, key=f"conv_{conv['id']}",
+                             use_container_width=True, type="secondary"):
+                    detail = fetch_conversation_detail(api_base, conv["id"])
+                    if detail:
+                        st.session_state.conversation_id = conv["id"]
+                        st.session_state.messages = []
+                        for m in detail["messages"]:
+                            st.session_state.messages.append({
+                                "role": m["role"],
+                                "content": m["content"],
+                                "question": m.get("question"),
+                                "rewritten_query": m.get("rewritten_query"),
+                                "sources": m.get("sources"),
+                                "confidence": m.get("confidence"),
+                            })
+            with col_del:
+                if st.button("🗑️", key=f"del_{conv['id']}", help="删除"):
+                    if delete_conversation_api(api_base, conv["id"]):
+                        st.session_state.conversation_list = fetch_conversations(api_base)
+                        if st.session_state.conversation_id == conv["id"]:
+                            st.session_state.messages = []
+                            st.session_state.conversation_id = None
+
+    # ── 我的收藏 ──
+    if st.session_state.mysql_ok:
+        st.divider()
+        st.subheader("⭐ 我的收藏")
+
+        # 缓存收藏列表，避免每次重跑都拉取
+        if st.session_state.favorites_list is None:
+            st.session_state.favorites_list = fetch_favorites(api_base)
+
+        favs = st.session_state.favorites_list
+        if not favs:
+            st.caption("暂无收藏")
+        for fav in favs[:10]:
+            with st.container():
+                if fav["fav_type"] == "conversation":
+                    st.markdown(f"💬 对话收藏")
+                elif fav["fav_type"] == "source":
+                    data = fav.get("source_data")
+                    if isinstance(data, str):
+                        try:
+                            data = json.loads(data)
+                        except Exception:
+                            data = {}
+                    if data:
+                        st.markdown(f"📌 {data.get('source', '')} {data.get('article_num', '')}")
+                    else:
+                        st.markdown("📌 条文收藏")
+                if st.button("❌ 取消", key=f"unfav_{fav['id']}"):
+                    delete_favorite(api_base, fav["id"])
+                    st.session_state.favorites_list = None  # 下次重跑重新拉取
+
+    # ── 文档管理 ──
     st.divider()
     st.subheader("文档管理")
 
@@ -180,7 +375,7 @@ with st.sidebar:
                     up = upload_file(api_base, f.getvalue(), f.name, "law")
                     ix = index_file(api_base, up["file_path"], "law")
                     total += ix["chunk_count"]
-                    time.sleep(1)  # 避免 milvus-lite 文件锁冲突
+                    time.sleep(1)
                 except RequestException as e:
                     st.warning(f"跳过 {f.name}: {_handle_api_error(e)}")
                     errors += 1
@@ -205,7 +400,7 @@ with st.sidebar:
                     up = upload_file(api_base, f.getvalue(), f.name, "case")
                     ix = index_file(api_base, up["file_path"], "case")
                     total += ix["chunk_count"]
-                    time.sleep(1)  # 避免 milvus-lite 文件锁冲突
+                    time.sleep(1)
                 except RequestException as e:
                     st.warning(f"跳过 {f.name}: {_handle_api_error(e)}")
                     errors += 1
@@ -230,7 +425,7 @@ with st.sidebar:
                     up = upload_file(api_base, f.getvalue(), f.name, "other")
                     ix = index_file(api_base, up["file_path"], "other")
                     total += ix["chunk_count"]
-                    time.sleep(1)  # 避免 milvus-lite 文件锁冲突
+                    time.sleep(1)
                 except RequestException as e:
                     st.warning(f"跳过 {f.name}: {_handle_api_error(e)}")
                     errors += 1
@@ -282,14 +477,30 @@ st.caption("基于 RAG 的金融法规智能问答 | bge-small-zh-v1.5 + Qwen2.5
 _mode_map = {"全部": None, "仅法条": "law", "仅案例": "case", "仅其他": "other"}
 doc_type_filter = _mode_map[mode]
 
+# 显示当前对话状态
+if st.session_state.conversation_id:
+    st.info(f"当前对话 ID: {st.session_state.conversation_id[:8]}...")
+
+# 收藏整个对话按钮
+if st.session_state.mysql_ok and st.session_state.conversation_id:
+    if st.button("⭐ 收藏当前对话", key="fav_conv"):
+        result = add_favorite(
+            api_base, fav_type="conversation",
+            conversation_id=st.session_state.conversation_id,
+        )
+        if result:
+            st.toast("对话已收藏", icon="⭐")
+            st.session_state.favorites_list = None  # 刷新收藏列表
+
 # 历史消息回放
-for msg in st.session_state.messages:
+for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if msg.get("rewritten_query") and msg["rewritten_query"] != msg.get("question"):
             st.caption(f"已改写查询：{msg['rewritten_query']}")
         if msg.get("sources"):
-            render_sources(msg["sources"])
+            render_sources(msg["sources"], msg_idx=idx,
+                           conv_id=st.session_state.conversation_id)
         if msg.get("confidence"):
             render_confidence(msg["confidence"])
 
@@ -309,7 +520,6 @@ if question := st.chat_input(
         confidence = {}
 
         try:
-            # 流式 SSE 请求
             payload: dict = {
                 "question": question,
                 "use_reranker": use_reranker,
@@ -317,6 +527,9 @@ if question := st.chat_input(
             }
             if doc_type_filter:
                 payload["doc_type_filter"] = doc_type_filter
+            # 传入对话ID
+            if st.session_state.conversation_id:
+                payload["conversation_id"] = st.session_state.conversation_id
 
             response = requests.post(
                 f"{api_base}/api/qa/stream",
@@ -327,7 +540,6 @@ if question := st.chat_input(
             response.raise_for_status()
 
             answer_box = st.empty()
-            meta_displayed = False
             for raw_line in response.iter_lines(decode_unicode=True):
                 if not raw_line or raw_line.startswith("data: [DONE]"):
                     continue
@@ -344,7 +556,6 @@ if question := st.chat_input(
                 if event.get("type") == "meta":
                     rewritten = event.get("rewritten_query", "") or ""
                     sources = event.get("sources", [])
-                    meta_displayed = True
                 elif event.get("type") == "token":
                     answer += event.get("text", "")
                     answer_box.markdown(answer + "▌")
@@ -358,7 +569,8 @@ if question := st.chat_input(
             answer_box.markdown(answer)
             if rewritten and rewritten != question:
                 st.caption(f"已改写查询：{rewritten}")
-            render_sources(sources)
+            render_sources(sources, msg_idx=len(st.session_state.messages),
+                           conv_id=st.session_state.conversation_id)
             if confidence:
                 render_confidence(confidence)
 
@@ -375,3 +587,6 @@ if question := st.chat_input(
             "sources": sources,
             "confidence": confidence,
         })
+
+        # 流式结束后，服务端已自动保存，但前端需要刷新对话列表
+        st.session_state.conversation_list = fetch_conversations(api_base)

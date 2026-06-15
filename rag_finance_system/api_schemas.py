@@ -1,5 +1,6 @@
 """Pydantic models for API request/response."""
 
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
 
@@ -80,3 +81,66 @@ class QAResponse(BaseModel):
     rewritten_query: Optional[str] = None
     sources: list[SourceItem]
     confidence: ConfidenceScores
+
+
+# ── Conversation / History ──
+
+class ConversationCreate(BaseModel):
+    title: str = "新对话"
+
+
+class ConversationOut(BaseModel):
+    id: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    message_count: int = 0
+
+
+class MessageOut(BaseModel):
+    id: str
+    role: str
+    content: str
+    question: Optional[str] = None
+    rewritten_query: Optional[str] = None
+    sources: Optional[list] = None
+    confidence: Optional[dict] = None
+    created_at: datetime
+
+
+class ConversationDetail(BaseModel):
+    id: str
+    title: str
+    messages: list[MessageOut]
+    created_at: datetime
+    updated_at: datetime
+
+
+# ── Favorites ──
+
+class FavoriteCreate(BaseModel):
+    fav_type: str = Field(..., pattern=r"^(conversation|source)$")
+    conversation_id: Optional[str] = None
+    message_id: Optional[str] = None
+    source_data: Optional[dict] = None
+    note: Optional[str] = None
+
+
+class FavoriteOut(BaseModel):
+    id: str
+    fav_type: str
+    conversation_id: Optional[str] = None
+    message_id: Optional[str] = None
+    source_data: Optional[dict] = None
+    note: Optional[str] = None
+    created_at: datetime
+
+
+class FavoritesCheckOut(BaseModel):
+    favorited: bool
+
+
+# ── QA 流式请求扩展 ──
+
+class QAStreamRequest(QARequest):
+    conversation_id: Optional[str] = Field(None, description="已有对话ID，为空则新建")

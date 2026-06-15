@@ -1,5 +1,5 @@
 """
-读取 questions.json，调用 DeepSeek API 对每条问题进行 RAG 查询重写，
+读取 questions.json，调用通义千问 API 对每条问题进行 RAG 查询重写，
 将重写后的 query 添加到每条记录中，格式为 {"question": "...", "query": "..."}
 """
 
@@ -11,8 +11,8 @@ from openai import OpenAI
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url=os.getenv("DEEPSEEK_API_BASE_URL", "https://api.deepseek.com"),
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    base_url=os.getenv("DASHSCOPE_API_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
 )
 
 INPUT_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "data", "questions.json")
@@ -51,7 +51,7 @@ def rewrite_batch(questions, start_idx):
 重写后的查询："""
 
     response = client.chat.completions.create(
-        model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+        model=os.getenv("DASHSCOPE_MODEL", "qwen-plus"),
         messages=[{"role": "user", "content": prompt}],
         max_tokens=4096,
         temperature=0.3,  # 低温度确保重写的一致性和准确性

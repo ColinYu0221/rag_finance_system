@@ -1,4 +1,6 @@
 services:
+  # ── 基础设施 ──
+
   etcd:
     image: quay.io/coreos/etcd:v3.5.18
     container_name: rag-finance-etcd
@@ -21,7 +23,7 @@ services:
       retries: 3
 
   minio:
-    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    image: docker.m.daocloud.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
     container_name: rag-finance-minio
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -38,7 +40,7 @@ services:
       retries: 3
 
   milvus:
-    image: milvusdb/milvus:v2.5.10
+    image: docker.m.daocloud.io/milvusdb/milvus:v2.5.10
     container_name: rag-finance-milvus
     command: ["milvus", "run", "standalone"]
     environment:
@@ -55,7 +57,68 @@ services:
       minio:
         condition: service_healthy
 
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.0
+    container_name: rag-finance-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rag123456
+      MYSQL_DATABASE: rag_finance
+      MYSQL_USER: rag_user
+      MYSQL_PASSWORD: rag123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── 应用服务 ──
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rag-finance-api
+    container_name: rag-finance-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - rag_finance_system/.env.docker
+    volumes:
+      - ./rag_finance_system/.env.docker:/app/rag_finance_system/.env
+      - ./data:/app/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      milvus:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    image: rag-finance-api
+    container_name: rag-finance-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - RAG_API_URL=http://api:8000
+    volumes:
+      - ./rag_finance_system/.env.docker:/app/rag_finance_system/.env
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   milvus-etcd:
   milvus-minio:
   milvus-standalone:
+  mysql-data:

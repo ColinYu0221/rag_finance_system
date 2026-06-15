@@ -14,7 +14,8 @@
   ├── Reranker 精排 (bge-reranker-v2-m3, Sigmoid 归一化)
   ├── Prompt 组装 (System + Context + Question)
   ├── LLM 生成 (Qwen2.5-7B / DeepSeek / 通义千问, 自动降级)
-  └── 可信度评分 + 溯源展示 + 改写查询回显
+  ├── 可信度评分 + 溯源展示 + 改写查询回显
+  └── 对话历史 + 收藏 (MySQL 持久化)
 ```
 
 ## 功能
@@ -31,6 +32,9 @@
 - **答案溯源**：每条回答附带来源文件、条文编号和相关度评分（绿/橙/红三色标识）
 - **可信度评分**：综合检索相关性（60%）与答案覆盖度（40%）
 - **多 LLM 后端**：本地 Qwen2.5-7B-Int4 / DeepSeek API / 通义千问 API，自动降级
+- **对话历史**：MySQL 持久化存储所有对话记录，支持查看、切换、删除
+- **收藏功能**：收藏整个对话或单条溯源条文，支持查看和取消收藏
+- **Docker 一键部署**：Docker Compose 编排 6 个服务（Milvus + MySQL + etcd + MinIO + API + 前端），GPU 支持
 - **批量导入**：支持一键导入 testfiles 中的 148 份监管规范性文件
 
 ## 技术栈
@@ -38,12 +42,15 @@
 | 组件 | 方案 |
 |------|------|
 | 前端 | Streamlit |
+| 后端 | FastAPI (Uvicorn) |
 | Embedding | bge-small-zh-v1.5 (512d) |
 | Reranker | bge-reranker-v2-m3 (Cross-Encoder + Sigmoid) |
 | 查询重写 | Qwen2.5-0.5B-Instruct + LoRA |
 | 向量数据库 | Milvus (本地/自建服务) |
+| 关系数据库 | MySQL 8.0 (对话历史/收藏) |
 | LLM | Qwen2.5-7B-Instruct-GPTQ-Int4 / DeepSeek / 通义千问 |
 | 文档解析 | pdfplumber (PDF) + 自研分段器 |
+| 容器化 | Docker Compose + NVIDIA GPU |
 
 ## 项目结构
 
@@ -52,47 +59,68 @@ rag_finance_system/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
+├── .dockerignore
+├── Dockerfile                       # Docker 镜像定义 (CUDA + GPU)
+├── docker-compose.yml               # 一键部署 6 个服务
 ├── checkpoints/
-│   └── rewriter_lora/            # 查询重写器 LoRA 微调权重
+│   └── rewriter_lora/               # 查询重写器 LoRA 微调权重
 │       ├── checkpoint-136/
 │       ├── checkpoint-340/
-│       └── final/                # 最终版权重
+│       └── final/                   # 最终版权重
+├── docker/
+│   └── requirements-docker.txt      # Docker 精简依赖 (31 个包)
+├── scripts/
+│   └── docker-entrypoint.sh         # Docker 启动脚本
 ├── data/
-│   ├── questions.json            # 600 条测试问答对 (question + query)
-│   ├── raw/                      # 上传文档存储
-│   │   ├── law/                  # 法条原文
-│   │   ├── case/                 # 案例原文
-│   │   └── other/                # 其他参考资料
-│   └── testfiles/                # 148 份地方监管规范性文件
+│   ├── finance_dictionary.json      # 金融词典 (术语/法规名/机构名)
+│   ├── questions.json               # 600 条测试问答对
+│   ├── raw/                         # 上传文档存储
+│   │   ├── law/                     # 法条原文
+│   │   ├── case/                    # 案例原文
+│   │   └── other/                   # 其他参考资料
+│   └── testfiles/                   # 148 份地方监管规范性文件
 │       ├── 上海监管局/
 │       ├── 江苏监管局/
 │       └── 浙江监管局/
-├── Milvus 服务                    # 向量存储（本地/自建部署，仓库外部依赖）
 ├── rag_finance_system/
-│   ├── .env                      # 环境配置 (不纳入版本控制)
-│   ├── app.py                    # Streamlit 前端
+│   ├── .env                         # 环境配置 (不纳入版本控制)
+│   ├── .env.docker                  # Docker 环境配置
+│   ├── .env.example                 # 环境配置模板
+│   ├── api_app.py                   # FastAPI 后端 (REST API + SSE 流式)
+│   ├── api_schemas.py               # Pydantic 请求/响应模型
+│   ├── app.py                       # Streamlit 前端
 │   ├── src/
 │   │   ├── __init__.py
-│   │   ├── document_processor.py # 文档解析 + 三轨智能分段
-│   │   ├── embedder.py           # Embedding + Reranker (Sigmoid)
-│   │   ├── vector_store.py       # Milvus 向量存储 (多维度过滤)
-│   │   ├── retriever.py          # 检索器 (多过滤器 OR + 精排 + 可信度)
-│   │   ├── rag_chain.py          # RAG 主链路 (实体检测 → 重写 → 检索 → 生成 → 溯源)
-│   │   ├── rewriter.py           # 查询重写器 (小模型 + LoRA)
-│   │   ├── llm.py                # LLM 推理 (本地/API 三路 + 自动降级)
-│   │   ├── change.py             # docx → txt 转换工具
-│   │   └── txt_files/            # 83 部中国金融法律原文
+│   │   ├── database.py              # SQLAlchemy 引擎与会话管理 (MySQL)
+│   │   ├── models.py                # ORM 模型: Conversation / Message / Favorite
+│   │   ├── chat_store.py            # 对话历史 + 收藏 业务逻辑
+│   │   ├── document_processor.py    # 文档解析 + 三轨智能分段
+│   │   ├── embedder.py              # Embedding + Reranker (Sigmoid)
+│   │   ├── vector_store.py          # Milvus 向量存储 (多维度过滤)
+│   │   ├── bm25_index.py            # BM25 关键词索引
+│   │   ├── retriever.py             # 检索器 (多过滤器 OR + 精排 + 可信度)
+│   │   ├── rag_chain.py             # RAG 主链路 (实体检测 → 重写 → 检索 → 生成 → 溯源)
+│   │   ├── rewriter.py              # 查询重写器 (小模型 + LoRA)
+│   │   ├── llm.py                   # LLM 推理 (本地/API 三路 + 自动降级)
+│   │   ├── dictionary.py            # 金融词典 (术语归一/别名召回)
+│   │   ├── term_index.py            # 术语倒排索引
+│   │   ├── es_index.py              # Elasticsearch 全文索引 (可选)
+│   │   ├── knowledge_graph.py       # Neo4j 知识图谱 (可选)
+│   │   ├── graph_builder.py         # 知识图谱构建器
+│   │   ├── change.py                # docx → txt 转换工具
+│   │   └── txt_files/               # 83 部中国金融法律原文
 │   └── tools/
-│       ├── convert_testfiles.py  # doc/docx → txt 批量转换 (LibreOffice)
-│       ├── generate_questions.py # 调用 API 从文档自动生成测试问题
+│       ├── convert_testfiles.py     # doc/docx → txt 批量转换
+│       ├── generate_questions.py    # 从文档自动生成测试问题
 │       ├── generate_rewrite_data.py # 生成查询重写训练数据
 │       ├── rewrite_questions_for_rag.py # 批量重写问题为检索查询
-│       ├── train_rewriter.py     # LoRA 微调查询重写小模型
-│       └── import_testfiles.py   # 批量导入 testfiles 到向量库
-├── models/                       # 本地模型 (不纳入版本控制)
+│       ├── train_rewriter.py        # LoRA 微调查询重写小模型
+│       └── import_testfiles.py      # 批量导入 testfiles 到向量库
+├── models/                          # 本地模型 (不纳入版本控制)
 │   ├── bge-small-zh-v1.5/
-│   └── bge-reranker-v2-m3/
-└── download_model.py             # 模型下载/验证脚本
+│   ├── bge-reranker-v2-m3/
+│   └── Qwen2.5-7B-Int4/
+└── download_models.py               # 模型下载脚本
 ```
 
 ## 安装
@@ -134,14 +162,15 @@ DASHSCOPE_API_KEY=xxx
 # Milvus 连接配置（本地/自建服务）
 MILVUS_HOST=127.0.0.1
 MILVUS_PORT=19530
-# 或使用 URI
-# MILVUS_URI=http://127.0.0.1:19530
 MILVUS_COLLECTION_NAME=finance_regulations
 MILVUS_EMBED_DIM=512
-# 可选：数据库名 / 认证
-# MILVUS_DB_NAME=default
-# MILVUS_USER=
-# MILVUS_PASSWORD=
+
+# MySQL 连接配置（对话历史/收藏）
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=rag_user
+MYSQL_PASSWORD=rag123456
+MYSQL_DATABASE=rag_finance
 
 # 检索参数
 RETRIEVER_TOP_K=10      # 向量检索召回数量
@@ -152,11 +181,45 @@ CHUNK_OVERLAP=100       # 分段重叠字符数
 
 ## 使用
 
-### 启动前端
+### 方式一：本地部署
 
 ```bash
+# 安装依赖
+pip install -r requirements.txt
+
+# 启动 Milvus（需要 docker）
+docker compose up -d milvus etcd minio
+
+# 启动 MySQL（需要 docker）
+docker compose up -d mysql
+
+# 启动 FastAPI 后端
+uvicorn rag_finance_system.api_app:app --host 0.0.0.0 --port 8000
+
+# 启动 Streamlit 前端
 streamlit run rag_finance_system/app.py
 ```
+
+### 方式二：Docker 一键部署（推荐）
+
+```bash
+# 构建镜像（首次约 15-20 分钟，含模型下载）
+docker compose build api
+
+# 启动所有服务
+docker compose up -d
+
+# 查看日志
+docker compose logs -f api
+
+# 停止所有服务
+docker compose down
+```
+
+启动后访问：
+- **Streamlit 前端**: http://localhost:8501
+- **FastAPI 文档**: http://localhost:8000/docs
+- **MinIO 控制台**: http://localhost:9001
 
 ### 前端操作流程
 
@@ -165,7 +228,9 @@ streamlit run rag_finance_system/app.py
 3. **选择模式**：全部 / 仅法条 / 仅案例 / 仅其他
 4. **提问**：输入自然语言问题，系统自动进行实体检测和查询重写
 5. **查看结果**：答案附带溯源条文（可展开）和可信度评分
-6. **侧边栏选项**：可切换 API 模式、开关 Reranker、开关查询重写
+6. **对话历史**：侧边栏显示历史对话列表，点击切换查看
+7. **收藏功能**：对话中可收藏整个对话或单条溯源条文
+8. **侧边栏选项**：可切换 API 模式、开关 Reranker、开关查询重写
 
 ### 命令行工具
 
@@ -176,7 +241,7 @@ python rag_finance_system/tools/convert_testfiles.py
 # 批量导入 testfiles 到向量库
 python rag_finance_system/tools/import_testfiles.py
 
-# 从文档自动生成测试问题
+# 从文档自动生成测试问题o
 python rag_finance_system/tools/generate_questions.py
 
 # 批量重写问题为检索查询
@@ -242,9 +307,9 @@ python rag_finance_system/tools/train_rewriter.py
 
 参见 [rag金融知识技术路线.md](rag_finance_system/rag金融知识技术路线.md) 了解后续规划：
 
+- ✅ FastAPI 后端 + Streamlit 前端
+- ✅ MySQL 对话历史 + 收藏功能
+- ✅ Docker Compose 一键部署 (GPU + Qwen2.5-7B-Int4)
 - Elasticsearch BM25 倒排索引 + 混合检索 (RRF 融合)
 - Neo4j 知识图谱（条文引用关系网络）
 - OCR 增强管线（扫描件支持）
-- MySQL 元数据管理 + 时效性/废止检测
-- FastAPI 后端 + Vue 3 前端
-- Docker Compose 一键部署
