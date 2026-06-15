@@ -1,0 +1,44 @@
+# GPU 版精简依赖 — PyTorch 已在基础镜像中预装，无需重复安装
+
+# LLM 推理加速 (GPTQ 量化模型)
+accelerate
+optimum>=1.20.0
+auto-gptq
+safetensors
+tokenizers
+huggingface_hub
+
+# Embedding / Reranker
+sentence-transformers
+transformers
+peft
+
+# FastAPI 后端
+fastapi
+uvicorn
+python-multipart
+pydantic
+loguru
+python-dotenv
+openai
+
+# Streamlit 前端
+streamlit
+requests
+
+# 数据库 (MySQL)
+sqlalchemy
+pymysql
+
+# 向量 / 检索
+pymilvus
+jieba
+numpy
+
+# 文档解析
+pdfplumber
+pillow
+PyMuPDF
+
+# 工具
+tqdm

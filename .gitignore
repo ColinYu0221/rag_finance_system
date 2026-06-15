@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+
+# 虚拟环境
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+
+# 模型
+models/
+checkpoints/
+
+# 数据（source data 不在此列）
+data/raw/
+rag_finance_system/data/
+fdata/
+*.docx
+*.bin
+*.pt
