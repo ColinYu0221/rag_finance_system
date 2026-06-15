@@ -1,0 +1,15 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.idea
+.vscode
+models/
+checkpoints/
+data/raw/
+db/
+*.log
+*.md
+!README.md
+.dockerignore

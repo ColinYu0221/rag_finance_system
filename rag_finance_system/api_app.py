@@ -23,10 +23,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rag_finance_system.api_schemas import (
     ConfidenceScores,
+    ConversationCreate,
+    ConversationDetail,
+    ConversationOut,
+    FavoriteCreate,
+    FavoriteOut,
+    FavoritesCheckOut,
     IndexRequest,
     IndexResponse,
+    MessageOut,
     QARequest,
     QAResponse,
+    QAStreamRequest,
     SearchRequest,
     SearchResponse,
     SearchResultItem,
@@ -60,6 +68,10 @@ _graph_builder = None
 # 术语倒排索引单例
 _term_index = None
 _term_index_path = str(Path(__file__).resolve().parent / "data" / "term_index.pkl")
+
+# MySQL 单例
+_db_available = False
+_db_session = None
 
 ALLOWED_EXTENSIONS = {".pdf", ".txt"}
 
@@ -187,6 +199,31 @@ def _get_graph_builder():
     return _graph_builder
 
 
+def _get_db():
+    """获取 MySQL session，失败时返回 None 以便降级"""
+    global _db_available, _db_session
+    if not _db_available:
+        return None
+    if _db_session is None:
+        try:
+            from sqlalchemy.orm import Session
+            from rag_finance_system.src.database import SessionLocal
+            _db_session = SessionLocal()
+        except Exception as e:
+            _db_available = False
+            logger.warning(f"MySQL 会话创建失败: {e}")
+            return None
+    return _db_session
+
+
+def _get_chat_store():
+    db = _get_db()
+    if db is None:
+        return None
+    from rag_finance_system.src.chat_store import ChatStore
+    return ChatStore(db)
+
+
 def _get_rag(use_api: bool = False):
     global _rag
     if _rag is None:
@@ -232,6 +269,7 @@ def _check_milvus() -> bool:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global _db_available
     logger.info("预加载 Embedder + VectorStore + BM25 + ES + 知识图谱 + 术语索引...")
     try:
         _get_embedder()
@@ -248,6 +286,17 @@ async def lifespan(app: FastAPI):
         logger.info("Milvus 连接正常")
     else:
         logger.warning("Milvus 未连接 — 上传/检索接口将返回 503")
+
+    # 初始化 MySQL
+    try:
+        from rag_finance_system.src.database import init_db
+        import rag_finance_system.src.models  # noqa: F401 — 确保表注册到 Base.metadata
+        init_db()
+        _db_available = True
+        logger.info("MySQL 连接正常，对话历史/收藏功能已启用")
+    except Exception as e:
+        _db_available = False
+        logger.warning(f"MySQL 不可用，对话历史/收藏功能将降级: {e}")
 
     yield
 
@@ -448,17 +497,161 @@ def qa(body: QARequest):
     )
 
 
-# ── 5. 流式问答 ──
+# ── 5. 对话历史 ──
+
+@app.get("/api/conversations", response_model=list[ConversationOut])
+def list_conversations():
+    store = _get_chat_store()
+    if store is None:
+        raise HTTPException(503, "MySQL 不可用")
+    convs = store.list_conversations()
+    return [
+        ConversationOut(
+            id=c.id, title=c.title,
+            created_at=c.created_at, updated_at=c.updated_at,
+            message_count=store.get_message_count(c.id),
+        )
+        for c in convs
+    ]
+
+
+@app.post("/api/conversations", response_model=ConversationOut)
+def create_conversation(body: ConversationCreate):
+    store = _get_chat_store()
+    if store is None:
+        raise HTTPException(503, "MySQL 不可用")
+    conv = store.create_conversation(title=body.title)
+    return ConversationOut(
+        id=conv.id, title=conv.title,
+        created_at=conv.created_at, updated_at=conv.updated_at,
+        message_count=0,
+    )
+
+
+@app.get("/api/conversations/{conv_id}", response_model=ConversationDetail)
+def get_conversation(conv_id: str):
+    store = _get_chat_store()
+    if store is None:
+        raise HTTPException(503, "MySQL 不可用")
+    conv = store.get_conversation(conv_id)
+    if not conv:
+        raise HTTPException(404, "对话不存在")
+    messages = store.get_messages(conv_id)
+    return ConversationDetail(
+        id=conv.id, title=conv.title,
+        created_at=conv.created_at, updated_at=conv.updated_at,
+        messages=[
+            MessageOut(
+                id=m.id, role=m.role, content=m.content,
+                question=m.question, rewritten_query=m.rewritten_query,
+                sources=m.sources, confidence=m.confidence,
+                created_at=m.created_at,
+            )
+            for m in messages
+        ],
+    )
+
+
+@app.delete("/api/conversations/{conv_id}")
+def delete_conversation(conv_id: str):
+    store = _get_chat_store()
+    if store is None:
+        raise HTTPException(503, "MySQL 不可用")
+    if not store.delete_conversation(conv_id):
+        raise HTTPException(404, "对话不存在")
+    return {"ok": True}
+
+
+# ── 6. 收藏 ──
+
+@app.post("/api/favorites", response_model=FavoriteOut)
+def add_favorite(body: FavoriteCreate):
+    store = _get_chat_store()
+    if store is None:
+        raise HTTPException(503, "MySQL 不可用")
+    fav = store.add_favorite(
+        fav_type=body.fav_type,
+        conversation_id=body.conversation_id,
+        message_id=body.message_id,
+        source_data=body.source_data,
+        note=body.note,
+    )
+    sd = fav.source_data
+    if isinstance(sd, str):
+        try:
+            sd = json.loads(sd)
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return FavoriteOut(
+        id=fav.id, fav_type=fav.fav_type,
+        conversation_id=fav.conversation_id,
+        message_id=fav.message_id,
+        source_data=sd,
+        note=fav.note,
+        created_at=fav.created_at,
+    )
+
+
+@app.get("/api/favorites", response_model=list[FavoriteOut])
+def list_favorites(fav_type: str | None = None):
+    store = _get_chat_store()
+    if store is None:
+        raise HTTPException(503, "MySQL 不可用")
+    favs = store.list_favorites(fav_type=fav_type)
+    result = []
+    for f in favs:
+        sd = f.source_data
+        if isinstance(sd, str):
+            try:
+                sd = json.loads(sd)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        result.append(
+            FavoriteOut(
+                id=f.id, fav_type=f.fav_type,
+                conversation_id=f.conversation_id,
+                message_id=f.message_id,
+                source_data=sd,
+                note=f.note,
+                created_at=f.created_at,
+            )
+        )
+    return result
+
+
+@app.delete("/api/favorites/{fav_id}")
+def delete_favorite(fav_id: str):
+    store = _get_chat_store()
+    if store is None:
+        raise HTTPException(503, "MySQL 不可用")
+    if not store.delete_favorite(fav_id):
+        raise HTTPException(404, "收藏不存在")
+    return {"ok": True}
+
+
+# ── 7. 流式问答（支持对话历史） ──
 
 @app.post("/api/qa/stream")
-def qa_stream(body: QARequest):
-    """流式 SSE 问答：检索后逐 token 推送，降低首字延迟。"""
+def qa_stream(body: QAStreamRequest):
+    """流式 SSE 问答：检索后逐 token 推送，支持自动保存对话历史。"""
     if not _check_milvus():
         raise HTTPException(503, "Milvus 服务不可用")
 
     def _generate():
         rag = _get_rag()
+        store = _get_chat_store()
+        conv_id = body.conversation_id
+        answer_text = ""
+        meta_data = {}
+
         try:
+            if store and not conv_id:
+                conv = store.create_conversation(title=body.question[:50])
+                conv_id = conv.id
+
+            if store and conv_id:
+                store.add_message(conv_id, role="user", content=body.question)
+
             for line in rag.query_stream(
                 question=body.question,
                 use_reranker=body.use_reranker,
@@ -467,6 +660,28 @@ def qa_stream(body: QARequest):
                 max_new_tokens=body.max_new_tokens,
             ):
                 yield f"data: {line}\n\n"
+                event = json.loads(line)
+                if event.get("type") == "meta":
+                    meta_data = event
+                elif event.get("type") == "token":
+                    answer_text += event.get("text", "")
+                elif event.get("type") == "done":
+                    meta_data["confidence"] = event.get("confidence", {})
+
+            if store and conv_id:
+                sources = meta_data.get("sources", [])
+                if isinstance(sources, str):
+                    sources = json.loads(sources)
+                confidence = meta_data.get("confidence", {})
+                if isinstance(confidence, str):
+                    confidence = json.loads(confidence)
+                store.add_message(
+                    conv_id, role="assistant", content=answer_text,
+                    question=body.question,
+                    rewritten_query=meta_data.get("rewritten_query"),
+                    sources=sources, confidence=confidence,
+                )
+
             yield "data: [DONE]\n\n"
         except Exception as e:
             logger.error(f"流式问答失败: {e}")

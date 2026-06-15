@@ -188,10 +188,21 @@ def get_llm(prefer_local: bool = True):
     自动选择LLM：优先本地，失败则退回API
     """
     if prefer_local:
-        try:
-            return LocalLLM()
-        except Exception as e:
-            logger.warning(f"本地LLM加载失败: {e}，切换到API模式")
+        import torch
+        model_exists = Path(LLM_MODEL_PATH).exists()
+        has_gpu = torch.cuda.is_available()
+        if model_exists and has_gpu:
+            try:
+                return LocalLLM()
+            except Exception as e:
+                logger.warning(f"本地LLM加载失败: {e}，切换到API模式")
+        else:
+            reasons = []
+            if not model_exists:
+                reasons.append(f"模型目录不存在({LLM_MODEL_PATH})")
+            if not has_gpu:
+                reasons.append("无GPU")
+            logger.warning(f"跳过本地LLM: {', '.join(reasons)}，使用API模式")
 
     if DEEPSEEK_API_KEY:
         return DeepseekAPILLM()
