@@ -1,10 +1,11 @@
-"""
+﻿"""
 api_app.py
 FastAPI 应用 — 从 Streamlit app.py 平移核心逻辑到 REST API。
 启动: py -3 -m uvicorn rag_finance_system.api_app:app --host 0.0.0.0 --port 8000
 """
 
 import json
+import re
 import sys
 import os
 from contextlib import asynccontextmanager
@@ -22,15 +23,26 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rag_finance_system.api_schemas import (
+    ArticleRelationRequest,
+    ArticleRelationResponse,
+    CategoryOut,
+    CategoryRename,
     ConfidenceScores,
     ConversationCreate,
     ConversationDetail,
     ConversationOut,
+    DictionaryCategoryUpdate,
+    DictionaryItemOut,
+    DictionaryItemsResponse,
     FavoriteCreate,
     FavoriteOut,
     FavoritesCheckOut,
+    FlowchartImageRequest,
+    FlowchartResponse,
+    FlowchartTextRequest,
     IndexRequest,
     IndexResponse,
+    LawNamesResponse,
     MessageOut,
     QARequest,
     QAResponse,
@@ -54,6 +66,7 @@ _dictionary = None
 _dictionary_failed = False
 _rag = None
 _processor = None
+_llm = None
 
 # ES 单例
 _es_index = None
@@ -222,6 +235,19 @@ def _get_chat_store():
         return None
     from rag_finance_system.src.chat_store import ChatStore
     return ChatStore(db)
+
+
+def _get_llm():
+    global _llm
+    if _llm is None:
+        try:
+            from rag_finance_system.src.llm import get_llm
+            _llm = get_llm(prefer_local=False)
+            logger.info(f"LLM 已就绪: {type(_llm).__name__}")
+        except Exception as e:
+            logger.warning(f"LLM 初始化失败: {e}")
+            _llm = None
+    return _llm
 
 
 def _get_rag(use_api: bool = False):
@@ -692,3 +718,364 @@ def qa_stream(body: QAStreamRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ── 8. 分类管理 ──
+
+@app.get("/api/categories", response_model=CategoryOut)
+def get_categories():
+    dict_obj = _get_dictionary()
+    if dict_obj is None:
+        return CategoryOut(categories={})
+    raw = dict_obj._raw
+    cats: dict[str, list[str]] = {}
+    for section_key in ("terms", "law_names", "authorities"):
+        for name, info in raw.get(section_key, {}).items():
+            c = info.get("category", "")
+            if c:
+                label = "term" if section_key == "terms" else "law" if section_key == "law_names" else "authority"
+                cats.setdefault(label, [])
+                if c not in cats[label]:
+                    cats[label].append(c)
+    for k in cats:
+        cats[k].sort()
+    return CategoryOut(categories=cats)
+
+
+@app.put("/api/categories/rename")
+def rename_category(body: CategoryRename):
+    dict_obj = _get_dictionary()
+    if dict_obj is None:
+        raise HTTPException(503, "词典不可用")
+    raw = dict_obj._raw
+    affected = {"term": 0, "law": 0, "authority": 0}
+    for section_key, label in [("terms", "term"), ("law_names", "law"), ("authorities", "authority")]:
+        for name, info in raw.get(section_key, {}).items():
+            if info.get("category") == body.old_name:
+                info["category"] = body.new_name
+                affected[label] += 1
+    _save_dictionary(raw)
+    return {"ok": True, "affected": affected}
+
+
+@app.delete("/api/categories/{name}")
+def delete_category(name: str):
+    dict_obj = _get_dictionary()
+    if dict_obj is None:
+        raise HTTPException(503, "词典不可用")
+    raw = dict_obj._raw
+    affected = {"term": 0, "law": 0, "authority": 0}
+    for section_key, label in [("terms", "term"), ("law_names", "law"), ("authorities", "authority")]:
+        for n, info in raw.get(section_key, {}).items():
+            if info.get("category") == name:
+                info["category"] = ""
+                affected[label] += 1
+    _save_dictionary(raw)
+    return {"ok": True, "affected": affected}
+
+
+def _save_dictionary(raw: dict):
+    global _dictionary, _dictionary_failed
+    try:
+        with open(_dict_path, "w", encoding="utf-8") as f:
+            json.dump(raw, f, ensure_ascii=False, indent=2)
+        _dictionary = None
+        _dictionary_failed = False
+        logger.info("金融词典已保存并重新加载")
+    except Exception as e:
+        logger.error(f"保存词典失败: {e}")
+
+
+# ── 9. 词典条目管理 ──
+
+@app.get("/api/dictionary/{item_type}", response_model=DictionaryItemsResponse)
+def get_dictionary_items(item_type: str):
+    dict_obj = _get_dictionary()
+    if dict_obj is None:
+        raise HTTPException(503, "词典不可用")
+    try:
+        raw = dict_obj._raw
+        section_map = {"term": "terms", "law": "law_names", "authority": "authorities"}
+        section_key = section_map.get(item_type)
+        if not section_key:
+            raise HTTPException(400, f"无效的 item_type: {item_type}")
+        items = []
+        for name, info in raw.get(section_key, {}).items():
+            items.append(DictionaryItemOut(
+                name=name,
+                definition=info.get("definition", ""),
+                category=info.get("category", ""),
+                aliases=info.get("aliases", []),
+            ))
+        return DictionaryItemsResponse(items=items)
+    except Exception as e:
+        logger.error(f"获取词典条目失败: {e}")
+        raise HTTPException(500, f"获取词典条目失败: {e}")
+
+
+@app.put("/api/dictionary/{item_name}/category")
+def set_item_category(item_name: str, body: DictionaryCategoryUpdate):
+    dict_obj = _get_dictionary()
+    if dict_obj is None:
+        raise HTTPException(503, "词典不可用")
+    raw = dict_obj._raw
+    section_map = {"term": "terms", "law": "law_names", "authority": "authorities"}
+    section_key = section_map.get(body.item_type)
+    if not section_key:
+        raise HTTPException(400, f"无效的 item_type: {body.item_type}")
+    entry = raw.get(section_key, {}).get(item_name)
+    if entry is None:
+        raise HTTPException(404, f"条目 '{item_name}' 不存在")
+    entry["category"] = body.category
+    _save_dictionary(raw)
+    return {"ok": True}
+
+
+# ── 10. 法规查询 ──
+
+@app.get("/api/laws", response_model=LawNamesResponse)
+def get_law_names():
+    vs = _get_vector_store()
+    if vs is None:
+        return LawNamesResponse(law_names=[])
+    try:
+        stats = vs.get_collection_stats()
+        law_names = stats.get("distinct_law_names", [])
+        if not law_names:
+            results = vs.search(query_text="", top_k=10000, output_fields=["law_name"])
+            law_names = sorted(set(r.get("law_name", "") for r in results if r.get("law_name")))
+        return LawNamesResponse(law_names=law_names)
+    except Exception as e:
+        logger.warning(f"获取法规列表失败: {e}")
+        return LawNamesResponse(law_names=[])
+
+
+# ── 11. 条文关联查询 ──
+
+_CN_NUM_MAP = {
+    "零": 0, "一": 1, "二": 2, "三": 3, "四": 4,
+    "五": 5, "六": 6, "七": 7, "八": 8, "九": 9,
+    "十": 10, "百": 100, "千": 1000,
+}
+
+
+def _parse_cn_number(text: str) -> str:
+    text = text.strip()
+    if text.isdigit():
+        return text
+    result = 0
+    current = 0
+    for ch in text:
+        val = _CN_NUM_MAP.get(ch)
+        if val is None:
+            continue
+        if val >= 10:
+            current = (current or 1) * val
+            result += current
+            current = 0
+        else:
+            current = val
+    result += current
+    return str(result)
+
+
+def _normalize_article_num(input_num: str) -> list[str]:
+    raw = input_num.strip()
+    if not raw:
+        return []
+    candidates: list[str] = [raw]
+    bare = raw
+    m = re.match(r"第(.+)条", raw)
+    if m:
+        bare = m.group(1)
+    if bare.isdigit():
+        candidates.append(bare)
+        candidates.append(f"第{bare}条")
+    elif bare != raw:
+        candidates.append(bare)
+        candidates.append(f"第{bare}条")
+        parsed = _parse_cn_number(bare)
+        if parsed != bare:
+            candidates.append(parsed)
+            candidates.append(f"第{parsed}条")
+    else:
+        parsed = _parse_cn_number(bare)
+        if parsed != bare:
+            candidates.append(parsed)
+            candidates.append(f"第{parsed}条")
+    return list(set(candidates))
+
+
+_REF_PATTERN = re.compile(r"《([^》]{2,60})》\s*第\s*([零一二三四五六七八九十百千\d]+)\s*条")
+
+
+def _query_article_fallback(law_name: str, article_num: str) -> dict:
+    """When Neo4j is unavailable, query Milvus directly for article info."""
+    try:
+        vs = _get_vector_store()
+        if vs is None or not vs.client.has_collection(vs.collection_name):
+            return {}
+    except Exception:
+        return {}
+
+    article_candidates = _normalize_article_num(article_num)
+
+    # 1. Find target article
+    target = None
+    for art in article_candidates:
+        escaped_law = law_name.replace("\\", "\\\\").replace('"', '\\"')
+        escaped_art = art.replace("\\", "\\\\").replace('"', '\\"')
+        expr = f'law_name == "{escaped_law}" and article_num == "{escaped_art}"'
+        try:
+            results = vs.client.query(
+                collection_name=vs.collection_name,
+                filter=expr,
+                output_fields=["law_name", "article_num", "text", "source", "chunk_id", "doc_type"],
+                limit=1,
+            )
+        except Exception:
+            results = []
+        if results:
+            hit = results[0]
+            target = {
+                "law_name": hit.get("law_name", law_name),
+                "article_num": hit.get("article_num", article_num),
+                "text": hit.get("text", ""),
+                "source": hit.get("source", ""),
+            }
+            break
+
+    if not target:
+        return {}
+
+    result: dict = {"target": target}
+
+    # 2. Outgoing refs — extract 《XXX》第X条 from target text
+    outgoing_refs = []
+    for match in _REF_PATTERN.finditer(target["text"]):
+        ref_law = match.group(1).strip()
+        ref_article_raw = match.group(2).strip()
+        ref_article = _parse_cn_number(ref_article_raw)
+        outgoing_refs.append({
+            "law_name": ref_law,
+            "article_num": f"第{ref_article}条",
+            "text": "",
+            "source": "",
+        })
+    result["outgoing_refs"] = outgoing_refs
+
+    # 3. Incoming refs — search other chunks mentioning this article number
+    incoming_refs = []
+    seen_chunks: set[str] = set()
+    for art in article_candidates:
+        escaped_law_name = law_name.replace("\\", "\\\\").replace('"', '\\"')
+        escaped_art = art.replace("\\", "\\\\").replace('"', '\\"')
+        try:
+            ref_results = vs.client.query(
+                collection_name=vs.collection_name,
+                filter='law_name != "' + escaped_law_name + '" and article_num == "' + escaped_art + '"',
+                output_fields=["law_name", "article_num", "text", "source", "chunk_id"],
+                limit=10,
+            )
+        except Exception:
+            ref_results = []
+        for hit in ref_results:
+            cid = hit.get("chunk_id", "")
+            if cid and cid not in seen_chunks:
+                seen_chunks.add(cid)
+                incoming_refs.append({
+                    "law_name": hit.get("law_name", ""),
+                    "article_num": hit.get("article_num", ""),
+                    "text": hit.get("text", ""),
+                    "source": hit.get("source", ""),
+                })
+    result["incoming_refs"] = incoming_refs
+
+    # 4. Parent document
+    result["parent_document"] = {
+        "name": target.get("law_name", law_name),
+        "doc_type": "law",
+        "source": target.get("source", ""),
+    }
+
+    # 5. Related documents & articles — cannot infer without graph edges
+    result["related_documents"] = []
+    result["related_articles"] = []
+
+    return result
+
+
+@app.post("/api/articles/relations", response_model=ArticleRelationResponse)
+def query_article_relations(body: ArticleRelationRequest):
+    kg = _get_graph()
+    if kg is not None and kg._connected:
+        try:
+            result = kg.get_article_relations(body.law_name, body.article_num)
+            if result:
+                return ArticleRelationResponse(**result)
+        except Exception as e:
+            logger.warning(f"Neo4j 条文关联查询失败，降级到 Milvus 查询: {e}")
+
+    logger.info(f"使用 Milvus 降级查询: {body.law_name} 第{body.article_num}条")
+    result = _query_article_fallback(body.law_name, body.article_num)
+    return ArticleRelationResponse(**result)
+
+
+# ── 12. 流程图生成 ──
+
+@app.post("/api/flowchart/image", response_model=FlowchartResponse)
+def flowchart_from_image(body: FlowchartImageRequest):
+    try:
+        import base64 as b64
+        img_bytes = b64.b64decode(body.image_base64)
+        ocr_text = ""
+        try:
+            from paddleocr import PaddleOCR
+            ocr = PaddleOCR(use_angle_cls=True, lang="ch", show_log=False)
+            import tempfile, os
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                tmp.write(img_bytes)
+                tmp_path = tmp.name
+            result = ocr.ocr(tmp_path, cls=True)
+            os.unlink(tmp_path)
+            if result and result[0]:
+                ocr_text = "\n".join([line[1][0] for line in result[0] if line[1]])
+        except Exception:
+            pass
+        if not ocr_text:
+            return FlowchartResponse(success=False, error="OCR 未能识别图片内容")
+        llm = _get_llm()
+        if llm is None:
+            return FlowchartResponse(success=False, error="LLM 不可用")
+        prompt = f"从以下文本中提取流程步骤，生成 Mermaid 流程图代码。只返回 Mermaid 代码，不要其他内容。\n\n{ocr_text}"
+        mermaid = llm.generate(prompt)
+        mermaid = mermaid.strip()
+        if "```" in mermaid:
+            mermaid = mermaid.split("```")[1]
+            if mermaid.startswith("mermaid"):
+                mermaid = mermaid[7:]
+            mermaid = mermaid.strip()
+        return FlowchartResponse(success=True, mermaid=mermaid, source="ocr+llm")
+    except Exception as e:
+        logger.error(f"图片流程图生成失败: {e}")
+        return FlowchartResponse(success=False, error=str(e))
+
+
+@app.post("/api/flowchart/text", response_model=FlowchartResponse)
+def flowchart_from_text(body: FlowchartTextRequest):
+    try:
+        llm = _get_llm()
+        if llm is None:
+            return FlowchartResponse(success=False, error="LLM 不可用")
+        prompt = f"从以下法规文本中提取流程步骤，生成 Mermaid 流程图代码。只返回 Mermaid 代码，不要其他内容。\n\n{body.text}"
+        mermaid = llm.generate(prompt)
+        mermaid = mermaid.strip()
+        if "```" in mermaid:
+            mermaid = mermaid.split("```")[1]
+            if mermaid.startswith("mermaid"):
+                mermaid = mermaid[7:]
+            mermaid = mermaid.strip()
+        return FlowchartResponse(success=True, mermaid=mermaid, source="text")
+    except Exception as e:
+        logger.error(f"文本流程图生成失败: {e}")
+        return FlowchartResponse(success=False, error=str(e))

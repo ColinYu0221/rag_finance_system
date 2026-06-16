@@ -57,6 +57,25 @@ services:
       minio:
         condition: service_healthy
 
+  neo4j:
+    image: docker.m.daocloud.io/neo4j:5-community
+    container_name: rag-finance-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/rag123456
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      - "7474:7474"
+      - "17687:7687"
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "neo4j", "RETURN 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
   mysql:
     image: docker.m.daocloud.io/library/mysql:8.0
     container_name: rag-finance-mysql
@@ -121,4 +140,6 @@ volumes:
   milvus-etcd:
   milvus-minio:
   milvus-standalone:
+  neo4j-data:
+  neo4j-logs:
   mysql-data:

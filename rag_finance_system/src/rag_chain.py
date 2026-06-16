@@ -180,7 +180,8 @@ QUERY_REWRITE_SYSTEM_PROMPT = """你是一个中文检索查询改写助手。
 请保留关键实体和意图，去掉无关废话，仅输出改写后的查询，不要输出额外解释或格式说明。"""
 
 
-def build_prompt(query: str, chunks: List[Dict[str, Any]], graph_facts: Optional[List[str]] = None) -> List[dict]:
+def build_prompt(query: str, chunks: List[Dict[str, Any]], graph_facts: Optional[List[str]] = None,
+                 rewritten_query: Optional[str] = None) -> List[dict]:
     """
     组装Prompt消息列表
     Args:
@@ -214,11 +215,15 @@ def build_prompt(query: str, chunks: List[Dict[str, Any]], graph_facts: Optional
             f"- {fact}" for fact in graph_facts
         )
 
+    query_note = ""
+    if rewritten_query and rewritten_query != query:
+        query_note = f"\n\n【检索意图】\n{rewritten_query}"
+
     user_message = f"""【参考条文】
 {context}{graph_context}
 
 【用户问题】
-{query}
+{query}{query_note}
 
 请根据以上参考条文回答问题："""
 
@@ -329,10 +334,16 @@ class RAGChain:
         """
         logger.info(f"问答请求: {question[:60]}...")
 
-        # 0. 词典实体检测 + 查询扩展
+        # 0. 查询重写（对原始问题先重写，保留检索意图）
+        rewritten_query = question
+        if use_query_rewrite:
+            rewritten_query = self.rewrite_query(question)
+            logger.info(f"重写查询: {rewritten_query[:80]}...")
+
+        # 1. 词典实体检测（基于原始问题，避免别名丢失）
         law_name_filter = None
         authority_filter = None
-        expanded_query = question
+        expanded_query = rewritten_query
         entities: dict[str, list[str]] = {"terms": [], "law_names": [], "authorities": []}
 
         if self.dictionary:
@@ -342,9 +353,9 @@ class RAGChain:
             if entities["authorities"]:
                 authority_filter = ",".join(entities["authorities"])
             if use_query_expansion and entities["terms"]:
-                expanded_query = self.dictionary.expand_query(question)
+                expanded_query = self.dictionary.expand_query(rewritten_query)
 
-        # 0b. 文件名检测 → source_filter（词典不覆盖，由实际文件索引提供）
+        # 2. 文件名检测 → source_filter（词典不覆盖，由实际文件索引提供）
         source_filter = self._detect_source(question)
 
         # 文件名检测命中时，不再用 law_name/authority 过滤（source 更精确）
@@ -357,12 +368,6 @@ class RAGChain:
                 law_name_filter = self._detect_law_name(question)
             if not authority_filter:
                 authority_filter = self._detect_authority(question)
-
-        # 1. 查询重写（对扩展后的查询做重写，保留别名提升召回）
-        rewritten_query = expanded_query
-        if use_query_rewrite:
-            rewritten_query = self.rewrite_query(expanded_query)
-            logger.info(f"重写查询: {rewritten_query[:80]}...")
 
         # 1b. 知识图谱扩展召回
         graph_articles: list[dict] = []
@@ -418,7 +423,8 @@ class RAGChain:
                 })
 
         # 3. 构建Prompt
-        messages = build_prompt(question, chunks, graph_facts=graph_facts)
+        messages = build_prompt(question, chunks, graph_facts=graph_facts,
+                                rewritten_query=rewritten_query)
 
         # 3. LLM生成
         answer = self.llm.generate(messages, max_new_tokens=max_new_tokens)
@@ -468,9 +474,14 @@ class RAGChain:
         # 0-3: 检索（与 query() 相同）
         logger.info(f"流式问答请求: {question[:60]}...")
 
+        # 0. 查询重写（对原始问题先重写，保留检索意图）
+        rewritten_query = question
+        if use_query_rewrite:
+            rewritten_query = self.rewrite_query(question)
+
         law_name_filter = None
         authority_filter = None
-        expanded_query = question
+        expanded_query = rewritten_query
         entities: dict[str, list[str]] = {"terms": [], "law_names": [], "authorities": []}
 
         if self.dictionary:
@@ -480,7 +491,7 @@ class RAGChain:
             if entities["authorities"]:
                 authority_filter = ",".join(entities["authorities"])
             if use_query_expansion and entities["terms"]:
-                expanded_query = self.dictionary.expand_query(question)
+                expanded_query = self.dictionary.expand_query(rewritten_query)
 
         source_filter = self._detect_source(question)
         if source_filter:
@@ -491,10 +502,6 @@ class RAGChain:
                 law_name_filter = self._detect_law_name(question)
             if not authority_filter:
                 authority_filter = self._detect_authority(question)
-
-        rewritten_query = expanded_query
-        if use_query_rewrite:
-            rewritten_query = self.rewrite_query(expanded_query)
 
         # 知识图谱
         graph_articles: list[dict] = []
@@ -529,7 +536,8 @@ class RAGChain:
                 chunks.append({"text": ga.get("text", ""), "source": ga.get("source", "图谱关联"),
                                "article_num": ga.get("article_num", ""), "score": 0.5})
 
-        messages = build_prompt(expanded_query, chunks, graph_facts=graph_facts)
+        messages = build_prompt(question, chunks, graph_facts=graph_facts,
+                                rewritten_query=rewritten_query)
 
         # 发送元信息（重写查询 + sources）
         sources_preview = [

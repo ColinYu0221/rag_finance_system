@@ -144,3 +144,105 @@ class FavoritesCheckOut(BaseModel):
 
 class QAStreamRequest(QARequest):
     conversation_id: Optional[str] = Field(None, description="已有对话ID，为空则新建")
+
+
+# ── 分类管理 ──
+
+class CategoryRename(BaseModel):
+    old_name: str
+    new_name: str
+
+
+class CategoryDelete(BaseModel):
+    name: str
+
+
+class CategoryOut(BaseModel):
+    categories: dict[str, list[str]]
+
+
+# ── 词典条目 ──
+
+class DictionaryItemOut(BaseModel):
+    name: str
+    definition: Optional[str] = None
+    category: Optional[str] = None
+    aliases: list[str] = []
+
+
+class DictionaryItemsResponse(BaseModel):
+    items: list[DictionaryItemOut]
+
+
+class DictionaryCategoryUpdate(BaseModel):
+    item_type: str
+    item_name: str
+    category: str
+
+
+# ── 法规查询 ──
+
+class LawNamesResponse(BaseModel):
+    law_names: list[str]
+
+
+# ── 条文关联 ──
+
+class ArticleRelationRequest(BaseModel):
+    law_name: str
+    article_num: str
+
+
+class ArticleRelationRef(BaseModel):
+    law_name: str
+    article_num: str
+    text: str
+    source: str
+    target_law: Optional[str] = None
+    target_article: Optional[str] = None
+
+
+class ArticleRelationDoc(BaseModel):
+    name: str
+    doc_type: Optional[str] = None
+    source: Optional[str] = None
+
+
+class ArticleRelationRelatedDoc(BaseModel):
+    name: str
+    relation_type: str
+    direction: str
+
+
+class ArticleRelationRelatedArticle(BaseModel):
+    law_name: str
+    article_num: str
+    text: str
+    source: str
+
+
+class ArticleRelationResponse(BaseModel):
+    target: Optional[dict] = None
+    incoming_refs: list[dict] = []
+    outgoing_refs: list[dict] = []
+    parent_document: Optional[dict] = None
+    related_documents: list[dict] = []
+    related_articles: list[dict] = []
+
+
+# ── 流程图 ──
+
+class FlowchartImageRequest(BaseModel):
+    image_base64: str
+    prefer_multimodal: bool = True
+
+
+class FlowchartTextRequest(BaseModel):
+    text: str
+
+
+class FlowchartResponse(BaseModel):
+    success: bool
+    mermaid: str = ""
+    source: str = ""
+    error: Optional[str] = None

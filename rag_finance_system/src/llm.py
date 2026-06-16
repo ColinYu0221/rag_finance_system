@@ -68,13 +68,14 @@ class LocalLLM:
         messages: List[dict],
         max_new_tokens: int = 1024,
         temperature: float = 0.1,
+        repetition_penalty: float = 1.1,
     ) -> str:
         import torch
         inputs = self._prepare_inputs(messages)
         with torch.no_grad():
             output_ids = self.model.generate(
                 **inputs, max_new_tokens=max_new_tokens, temperature=temperature,
-                do_sample=temperature > 0, repetition_penalty=1.1,
+                do_sample=temperature > 0, repetition_penalty=repetition_penalty,
             )
         generated = output_ids[0][inputs.input_ids.shape[1]:]
         return self.tokenizer.decode(generated, skip_special_tokens=True)
@@ -84,6 +85,7 @@ class LocalLLM:
         messages: List[dict],
         max_new_tokens: int = 1024,
         temperature: float = 0.1,
+        repetition_penalty: float = 1.1,
     ):
         """流式生成，yield 每个新 token 的文本增量。"""
         import torch
@@ -99,7 +101,7 @@ class LocalLLM:
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             do_sample=temperature > 0,
-            repetition_penalty=1.1,
+            repetition_penalty=repetition_penalty,
             streamer=streamer,
         )
         thread = Thread(target=self.model.generate, kwargs=gen_kwargs)
@@ -129,6 +131,7 @@ class QwenAPILLM:
         messages: List[dict],
         max_new_tokens: int = 1024,
         temperature: float = 0.1,
+        frequency_penalty: float = 0.1,
     ) -> str:
         from openai import OpenAI
 
@@ -141,6 +144,7 @@ class QwenAPILLM:
             messages=messages,
             max_tokens=max_new_tokens,
             temperature=temperature,
+            frequency_penalty=frequency_penalty,
         )
         return response.choices[0].message.content
 
@@ -163,6 +167,7 @@ class DeepseekAPILLM:
         messages: List[dict],
         max_new_tokens: int = 1024,
         temperature: float = 0.1,
+        frequency_penalty: float = 0.1,
     ) -> str:
         from openai import OpenAI
 
@@ -175,6 +180,7 @@ class DeepseekAPILLM:
             messages=messages,
             max_tokens=max_new_tokens,
             temperature=temperature,
+            frequency_penalty=frequency_penalty,
         )
         return response.choices[0].message.content
 

@@ -123,7 +123,7 @@ class Reranker:
             pairs = [[query, doc] for doc in batch_docs]
 
             inputs = self.tokenizer(
-                pairs, padding=True, truncation=True, return_tensors="pt"
+                pairs, padding=True, truncation=True, max_length=512, return_tensors="pt"
             ).to(self.device)
 
             with torch.no_grad():

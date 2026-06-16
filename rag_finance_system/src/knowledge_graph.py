@@ -513,6 +513,106 @@ class KnowledgeGraph:
 
         return facts[:max_results]
 
+    def get_article_relations(self, law_name: str, article_num: str) -> Dict[str, Any]:
+        """查询指定条文的引用关系、所属文档、关联法规。"""
+        if not self._connected:
+            return {}
+        result: Dict[str, Any] = {}
+
+        target_records = self._run(
+            """
+            MATCH (a:Article)
+            WHERE a.law_name = $law_name AND a.article_num = $article_num
+            RETURN a.text AS text, a.law_name AS law_name,
+                   a.article_num AS article_num, a.source AS source,
+                   a.chunk_id AS chunk_id
+            LIMIT 1
+            """,
+            {"law_name": law_name, "article_num": article_num},
+        )
+        if not target_records:
+            return {}
+        target = target_records[0]
+        result["target"] = {
+            "law_name": target["law_name"],
+            "article_num": target["article_num"],
+            "text": target["text"],
+            "source": target["source"],
+        }
+
+        incoming = self._run(
+            """
+            MATCH (src:Article)-[:REFERENCES]->(dst:Article)
+            WHERE dst.law_name = $law_name AND dst.article_num = $article_num
+            RETURN src.law_name AS law_name, src.article_num AS article_num,
+                   src.text AS text, src.source AS source
+            LIMIT 20
+            """,
+            {"law_name": law_name, "article_num": article_num},
+        )
+        result["incoming_refs"] = incoming
+
+        outgoing = self._run(
+            """
+            MATCH (src:Article)-[:REFERENCES]->(dst:Article)
+            WHERE src.law_name = $law_name AND src.article_num = $article_num
+            RETURN dst.law_name AS law_name, dst.article_num AS article_num,
+                   dst.text AS text, dst.source AS source
+            LIMIT 20
+            """,
+            {"law_name": law_name, "article_num": article_num},
+        )
+        result["outgoing_refs"] = outgoing
+
+        parent_records = self._run(
+            """
+            MATCH (a:Article)-[:BELONGS_TO]->(d:Document)
+            WHERE a.law_name = $law_name AND a.article_num = $article_num
+            RETURN d.name AS name, d.doc_type AS doc_type, d.source AS source
+            LIMIT 1
+            """,
+            {"law_name": law_name, "article_num": article_num},
+        )
+        if parent_records:
+            result["parent_document"] = parent_records[0]
+
+        related_docs = self._run(
+            """
+            MATCH (src:Document)-[rel:RELATES_TO]->(dst:Document)
+            WHERE src.name = $law_name
+            RETURN dst.name AS name, rel.relation_type AS relation_type, 'outgoing' AS direction
+            LIMIT 10
+            """,
+            {"law_name": law_name},
+        )
+        related_docs += self._run(
+            """
+            MATCH (src:Document)-[rel:RELATES_TO]->(dst:Document)
+            WHERE dst.name = $law_name
+            RETURN src.name AS name, rel.relation_type AS relation_type, 'incoming' AS direction
+            LIMIT 10
+            """,
+            {"law_name": law_name},
+        )
+        result["related_documents"] = related_docs
+
+        related_articles = []
+        for rd in related_docs[:3]:
+            ra_records = self._run(
+                """
+                MATCH (a:Article)-[:BELONGS_TO]->(d:Document)
+                WHERE d.name = $doc_name
+                RETURN a.law_name AS law_name, a.article_num AS article_num,
+                       a.text AS text, a.source AS source
+                LIMIT 2
+                """,
+                {"doc_name": rd["name"]},
+            )
+            related_articles.extend(ra_records)
+        result["related_articles"] = related_articles
+
+        return result
+
     def stats(self) -> Dict[str, int]:
         if not self._connected:
             return {}

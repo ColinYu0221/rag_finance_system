@@ -19,7 +19,7 @@ load_dotenv()
 TOP_K = int(os.getenv("RETRIEVER_TOP_K", 10))
 RERANKER_TOP_N = int(os.getenv("RERANKER_TOP_N", 5))
 BM25_TOP_K = int(os.getenv("BM25_TOP_K", 10))
-RRF_K = int(os.getenv("RRF_K", 60))
+RRF_K = int(os.getenv("RRF_K", 30))
 
 # 全局线程池，避免每次检索重复创建
 _TPOOL = None
@@ -247,12 +247,12 @@ class Retriever:
                 term_candidates = result
                 logger.info(f"术语索引召回 {len(term_candidates)} 条")
 
-        # Step 3: 加权 RRF 多路融合（BM25/ES 权重 3x，向量 1x，术语 2x）
+        # Step 3: 加权 RRF 多路融合（向量 1x，BM25/ES 1.5x，术语 2x）
         recall_lists: list = [vec_candidates]
         recall_weights: list = [1.0]
         if ft_candidates:
             recall_lists.append(ft_candidates)
-            recall_weights.append(3.0)
+            recall_weights.append(1.5)
         if term_candidates:
             recall_lists.append(term_candidates)
             recall_weights.append(2.0)
@@ -294,15 +294,18 @@ class Retriever:
         if not retrieved_chunks:
             return {"total": 0.0, "retrieval": 0.0, "coverage": 0.0}
 
-        retrieval_score = max(
+        scores = [
             c.get("reranker_score", c.get("rrf_score", c.get("score", 0.0)))
             for c in retrieved_chunks
-        )
+        ]
+        scores.sort()
+        n = len(scores)
+        retrieval_score = scores[n // 2] if n > 0 else 0.0
 
         answer_lower = answer.lower()
         matched = sum(
             1 for c in retrieved_chunks
-            if any(word in answer_lower for word in c["text"][:100].lower().split()[:10])
+            if any(seg in answer_lower for seg in _char_ngrams(c["text"][:200], 5))
         )
         coverage_score = min(matched / max(len(retrieved_chunks), 1), 1.0)
 
@@ -313,3 +316,9 @@ class Retriever:
             "retrieval": round(retrieval_score, 3),
             "coverage": round(coverage_score, 3),
         }
+
+
+def _char_ngrams(text: str, n: int = 5) -> set:
+    """生成字符级 n-gram，用于中文文本的覆盖度匹配"""
+    text = text.lower()
+    return {text[i:i + n] for i in range(max(0, len(text) - n + 1))}

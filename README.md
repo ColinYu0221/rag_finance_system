@@ -218,7 +218,7 @@ docker compose down
 
 启动后访问：
 - **Streamlit 前端**: http://localhost:8501
-- **FastAPI 文档**: http://localhost:8000/docs
+- 
 - **MinIO 控制台**: http://localhost:9001
 
 ### 前端操作流程
