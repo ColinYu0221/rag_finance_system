@@ -34,7 +34,7 @@
 - **多 LLM 后端**：本地 Qwen2.5-7B-Int4 / DeepSeek API / 通义千问 API，自动降级
 - **对话历史**：MySQL 持久化存储所有对话记录，支持查看、切换、删除
 - **收藏功能**：收藏整个对话或单条溯源条文，支持查看和取消收藏
-- **Docker 一键部署**：Docker Compose 编排 6 个服务（Milvus + MySQL + etcd + MinIO + API + 前端），GPU 支持
+- **Docker 一键部署**：Docker Compose 编排 7 个服务（Milvus + MySQL + Neo4j + etcd + MinIO + API + 前端），GPU 支持
 - **批量导入**：支持一键导入 testfiles 中的 148 份监管规范性文件
 
 ## 技术栈
@@ -48,6 +48,7 @@
 | 查询重写 | Qwen2.5-0.5B-Instruct + LoRA |
 | 向量数据库 | Milvus (本地/自建服务) |
 | 关系数据库 | MySQL 8.0 (对话历史/收藏) |
+| 知识图谱 | Neo4j 5-Community (条文引用关系/法规关联) |
 | LLM | Qwen2.5-7B-Instruct-GPTQ-Int4 / DeepSeek / 通义千问 |
 | 文档解析 | pdfplumber (PDF) + 自研分段器 |
 | 容器化 | Docker Compose + NVIDIA GPU |
@@ -61,7 +62,7 @@ rag_finance_system/
 ├── .gitignore
 ├── .dockerignore
 ├── Dockerfile                       # Docker 镜像定义 (CUDA + GPU)
-├── docker-compose.yml               # 一键部署 6 个服务
+├── docker-compose.yml               # 一键部署 7 个服务
 ├── checkpoints/
 │   └── rewriter_lora/               # 查询重写器 LoRA 微调权重
 │       ├── checkpoint-136/
@@ -73,6 +74,7 @@ rag_finance_system/
 │   └── docker-entrypoint.sh         # Docker 启动脚本
 ├── data/
 │   ├── finance_dictionary.json      # 金融词典 (术语/法规名/机构名)
+│   ├── bm25_index.pkl               # BM25 持久化索引
 │   ├── questions.json               # 600 条测试问答对
 │   ├── raw/                         # 上传文档存储
 │   │   ├── law/                     # 法条原文
@@ -165,6 +167,12 @@ MILVUS_PORT=19530
 MILVUS_COLLECTION_NAME=finance_regulations
 MILVUS_EMBED_DIM=512
 
+# Neo4j 知识图谱配置（条文引用关系 / Docker 端口 17687→7687）
+NEO4J_URI=bolt://localhost:17687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=neo4j
+NEO4J_DATABASE=neo4j
+
 # MySQL 连接配置（对话历史/收藏）
 MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
@@ -193,7 +201,10 @@ docker compose up -d milvus etcd minio
 # 启动 MySQL（需要 docker）
 docker compose up -d mysql
 
-# 启动 FastAPI 后端
+# 启动 Milvus + MySQL + Neo4j（需要 docker）
+docker compose up -d milvus mysql neo4j
+
+# 启动 FastAPI 后端（Windows 端口 8000 被保留时使用 9099）
 uvicorn rag_finance_system.api_app:app --host 0.0.0.0 --port 8000
 
 # 启动 Streamlit 前端
@@ -218,7 +229,7 @@ docker compose down
 
 启动后访问：
 - **Streamlit 前端**: http://localhost:8501
-- 
+- **Neo4j Browser** (图谱可视化): http://localhost:7474
 - **MinIO 控制台**: http://localhost:9001
 
 ### 前端操作流程
@@ -230,7 +241,9 @@ docker compose down
 5. **查看结果**：答案附带溯源条文（可展开）和可信度评分
 6. **对话历史**：侧边栏显示历史对话列表，点击切换查看
 7. **收藏功能**：对话中可收藏整个对话或单条溯源条文
-8. **侧边栏选项**：可切换 API 模式、开关 Reranker、开关查询重写
+8. **条文关联查询**（Tab 2）：输入法规名称和条文编号，查看引用关系网络（基于 Neo4j 知识图谱，Neo4j 不可用时降级为 Milvus 文本匹配）
+9. **标签分类管理**（Tab 3）：管理金融词典中术语、法规和机构的分类标签
+10. **侧边栏选项**：可切换 API 模式、开关 Reranker、开关查询重写
 
 ### 命令行工具
 
@@ -310,6 +323,6 @@ python rag_finance_system/tools/train_rewriter.py
 - ✅ FastAPI 后端 + Streamlit 前端
 - ✅ MySQL 对话历史 + 收藏功能
 - ✅ Docker Compose 一键部署 (GPU + Qwen2.5-7B-Int4)
-- Elasticsearch BM25 倒排索引 + 混合检索 (RRF 融合)
-- Neo4j 知识图谱（条文引用关系网络）
+- ✅ Elasticsearch BM25 倒排索引 + 混合检索 (RRF 融合)
+- ✅ Neo4j 知识图谱（条文引用关系网络 + 条文关联查询）
 - OCR 增强管线（扫描件支持）
