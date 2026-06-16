@@ -191,7 +191,7 @@ docker compose up -d mysql
 docker compose up -d milvus mysql neo4j
 
 # 启动 FastAPI 后端（Windows 端口 8000 被保留时使用 9099）
-uvicorn rag_finance_system.api_app:app --host 0.0.0.0 --port 8000
+uvicorn rag_finance_system.api_app:app --host 0.0.0.0 --port 9099
 
 # 启动 Streamlit 前端
 streamlit run rag_finance_system/app.py

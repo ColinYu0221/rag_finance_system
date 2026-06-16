@@ -13,6 +13,10 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=str(Path(__file__).resolve().parent.parent / ".env"))
 
+# 确保 HuggingFace 镜像生效
+if not os.environ.get("HF_ENDPOINT"):
+    os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
+
 _LLM_MODEL_PATH = os.getenv("LLM_MODEL_PATH", "./models/Qwen2.5-7B-Int4")
 # 相对路径 → 基于 llm.py 所在目录解析
 _mp = Path(_LLM_MODEL_PATH)

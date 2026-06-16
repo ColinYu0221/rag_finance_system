@@ -15,6 +15,10 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 load_dotenv(dotenv_path=str(Path(__file__).resolve().parent.parent / ".env"))
 
+# 确保 HuggingFace 镜像生效
+if not os.environ.get("HF_ENDPOINT"):
+    os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
+
 EMBEDDING_MODEL_PATH = os.getenv("EMBEDDING_MODEL_PATH", "BAAI/bge-small-zh-v1.5")
 RERANKER_MODEL_PATH = os.getenv("RERANKER_MODEL_PATH", "BAAI/bge-reranker-v2-m3")
 RERANKER_BATCH_SIZE = int(os.getenv("RERANKER_BATCH_SIZE", 16))
@@ -85,10 +89,10 @@ class Reranker:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.batch_size = batch_size
 
-        # 相对路径 → src/ 向上一级 (rag_finance_system/) 再拼 models/
+        # 相对路径 → src/ 向上两级 (项目根) 再拼 models/
         _mp = Path(model_path)
         if not _mp.is_absolute():
-            _mp = (Path(__file__).resolve().parent.parent / model_path).resolve()
+            _mp = (Path(__file__).resolve().parent.parent.parent / model_path).resolve()
         model_path = str(_mp)
         logger.info(f"Reranker 模型路径: {model_path}")
 
@@ -100,13 +104,12 @@ class Reranker:
         ).to(self.device)
         self.model.eval()
 
-        if self.device == "cuda":
-            self._warmup()
+        self._warmup()
 
     def _warmup(self):
         dummy_pairs = [["warmup", "warmup"]]
         inputs = self.tokenizer(
-            dummy_pairs, padding=True, truncation=True, return_tensors="pt"
+            dummy_pairs, padding=True, truncation=True, max_length=512, return_tensors="pt"
         ).to(self.device)
         with torch.no_grad():
             _ = self.model(**inputs)

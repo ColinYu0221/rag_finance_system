@@ -87,8 +87,8 @@ class ChatStore:
             content=content,
             question=question,
             rewritten_query=rewritten_query,
-            sources=json.dumps(sources, ensure_ascii=False) if sources else None,
-            confidence=json.dumps(confidence, ensure_ascii=False) if confidence else None,
+            sources=sources,
+            confidence=confidence,
         )
         self.db.add(msg)
 
@@ -124,7 +124,7 @@ class ChatStore:
             fav_type=fav_type,
             conversation_id=conversation_id,
             message_id=message_id,
-            source_data=json.dumps(source_data, ensure_ascii=False) if source_data else None,
+            source_data=source_data,
             note=note,
         )
         self.db.add(fav)

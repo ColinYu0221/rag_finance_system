@@ -67,7 +67,14 @@ def _build_law_name_index() -> dict[str, str]:
     return _mapping
 
 
-_LAW_NAME_INDEX = _build_law_name_index()
+_LAW_NAME_INDEX = None
+
+def _get_law_name_index() -> dict[str, str]:
+    """延迟加载法律名称索引。"""
+    global _LAW_NAME_INDEX
+    if _LAW_NAME_INDEX is None:
+        _LAW_NAME_INDEX = _build_law_name_index()
+    return _LAW_NAME_INDEX
 
 
 def _build_source_index() -> dict[str, str]:
@@ -107,7 +114,14 @@ def _build_source_index() -> dict[str, str]:
     return _mapping
 
 
-_SOURCE_INDEX = _build_source_index()
+_SOURCE_INDEX = None
+
+def _get_source_index() -> dict[str, str]:
+    """延迟加载文件名索引。"""
+    global _SOURCE_INDEX
+    if _SOURCE_INDEX is None:
+        _SOURCE_INDEX = _build_source_index()
+    return _SOURCE_INDEX
 
 
 def _build_authority_index() -> dict[str, str]:
@@ -160,7 +174,14 @@ def _build_authority_index() -> dict[str, str]:
     return _mapping
 
 
-_AUTHORITY_INDEX = _build_authority_index()
+_AUTHORITY_INDEX = None
+
+def _get_authority_index() -> dict[str, str]:
+    """延迟加载机构索引。"""
+    global _AUTHORITY_INDEX
+    if _AUTHORITY_INDEX is None:
+        _AUTHORITY_INDEX = _build_authority_index()
+    return _AUTHORITY_INDEX
 
 # System Prompt：约束LLM只基于上下文回答，防止幻觉
 SYSTEM_PROMPT = """你是一个专业的金融法规知识助手。你的任务是根据提供的金融制度条文，准确回答用户的问题。
@@ -250,14 +271,50 @@ class RAGChain:
     def _detect_source(question: str) -> Optional[str]:
         """从问题中识别提及的具体文件名/法规简称，返回完整 source。
 
-        "上海银行业金融机构防范非法集资工作机制"  →  "上海银保监局办公室关于印发《...》的通知"
-        优先匹配最长的键（避免"上海"被误匹配为机构而不是文件名的一部分）。
+        三层匹配策略：
+        1. 精确子串匹配（"防范非法集资工作机制"）
+        2. 关键词重叠匹配（模糊匹配，>60% 重叠即命中，解决别名/简写问题）
+        回退 None，由 law_name/authority 路径继续。
         """
-        for short in sorted(_SOURCE_INDEX, key=len, reverse=True):
+        import glob as _glob
+
+        source_index = _get_source_index()
+
+        # Layer 1: 精确子串匹配
+        for short in sorted(source_index, key=len, reverse=True):
             if len(short) >= 6 and short in question:
-                full = _SOURCE_INDEX[short]
-                logger.info(f"检测到文件名: {short[:60]} → {full[:60]}")
+                full = source_index[short]
+                logger.info(f"检测到文件名(精确): {short[:60]} → {full[:60]}")
                 return full
+
+        # Layer 2: 关键词重叠匹配 (fallback for slight wording differences)
+        _filter_words = {"的", "了", "和", "是", "在", "与", "对", "及", "等", "有关", "关于", "依据", "根据"}
+        q_segs = set()
+        for _seg in re.split(r"[\s,，.。;；：:!?！？、]+", question):
+            if len(_seg) >= 4:
+                q_segs.add(_seg)
+        if not q_segs:
+            return None
+        best_key = None
+        best_ratio = 0.0
+        for short, full in source_index.items():
+            if len(short) < 8:
+                continue
+            k_segs = set()
+            for _seg in re.split(r"[\s,，.。;；：:!?！？、]+", short):
+                if len(_seg) >= 4:
+                    k_segs.add(_seg)
+            if not k_segs:
+                continue
+            overlap = len(q_segs & k_segs) / len(k_segs)
+            if overlap > best_ratio and overlap >= 0.6:
+                best_ratio = overlap
+                best_key = short
+        if best_key:
+            full = source_index[best_key]
+            logger.info(f"检测到文件名(模糊): {best_key[:60]} (overlap={best_ratio:.1%}) → {full[:60]}")
+            return full
+
         return None
 
     def _detect_law_name(self, question: str) -> Optional[str]:
@@ -269,7 +326,8 @@ class RAGChain:
                 logger.info(f"词典检测法律: {law}")
                 return law
         # 回退：旧文件名索引
-        for short, full in _LAW_NAME_INDEX.items():
+        law_name_index = _get_law_name_index()
+        for short, full in law_name_index.items():
             if len(short) >= 3 and short in question:
                 logger.info(f"索引检测法律: {short} → {full}")
                 return full
@@ -284,7 +342,8 @@ class RAGChain:
                 logger.info(f"词典检测机构: {auth}")
                 return auth
         # 回退：旧文件名索引
-        for short, full in _AUTHORITY_INDEX.items():
+        authority_index = _get_authority_index()
+        for short, full in authority_index.items():
             if len(short) >= 2 and short in question:
                 logger.info(f"索引检测机构: {short} → {full}")
                 return full
@@ -394,12 +453,17 @@ class RAGChain:
             except Exception as e:
                 logger.warning(f"图谱扩展失败: {e}")
 
-        # 2. 检索（默认只看有效版本，0 结果时回退不过滤 status）
+        # 2. 检索（默认只返回有效版本，include_historical=True 展开全部）
+        # source_filter 精确到文件时，跳过 reranker 省时（CP bge-reranker-v2-m3 ~10s）
+        _use_reranker = use_reranker
+        if _use_reranker and source_filter:
+            _use_reranker = False
+            logger.info("source_filter 命中，跳过 reranker 省时")
         status_filter = None if include_historical else "有效"
         chunks = self.retriever.retrieve(
             query=rewritten_query,
             top_k=top_k,
-            use_reranker=use_reranker,
+            use_reranker=_use_reranker,
             source_filter=source_filter,
             doc_type_filter=doc_type_filter,
             law_name_filter=law_name_filter,
@@ -542,7 +606,8 @@ class RAGChain:
 
         status_filter = None if include_historical else "有效"
         chunks = self.retriever.retrieve(
-            query=rewritten_query, top_k=top_k, use_reranker=use_reranker,
+            query=rewritten_query, top_k=top_k,
+            use_reranker=use_reranker and not bool(source_filter),
             source_filter=source_filter, doc_type_filter=doc_type_filter,
             law_name_filter=law_name_filter, authority_filter=authority_filter,
             status_filter=status_filter,

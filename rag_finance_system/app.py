@@ -269,6 +269,35 @@ CUSTOM_CSS = """
     .st-emotion-cache-10trblm, .st-bd, .st-br, .st-bc, .st-emotion-cache-1xarl3l { color: var(--text-primary); }
     a { color: var(--accent); }
     .stDataFrame { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: var(--radius); }
+
+    /* 收藏按钮样式 */
+    .stButton > button[key*="fav_src"] {
+        background: linear-gradient(135deg, #d4a843 0%, #b8922e 100%) !important;
+        color: #1a1a1a !important;
+        border: none !important;
+        border-radius: 20px !important;
+        padding: 0.3rem 0.8rem !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+    }
+    .stButton > button[key*="fav_src"]:hover {
+        background: linear-gradient(135deg, #e8c460 0%, #d4a843 100%) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(212, 168, 67, 0.4) !important;
+    }
+    .stButton > button[key="fav_conversation"] {
+        background: linear-gradient(135deg, #d4a843 0%, #b8922e 100%) !important;
+        color: #1a1a1a !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1rem !important;
+        font-weight: 600 !important;
+    }
+    .stButton > button[key="fav_conversation"]:hover {
+        background: linear-gradient(135deg, #e8c460 0%, #d4a843 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 16px rgba(212, 168, 67, 0.5) !important;
+    }
 </style>
 """
 
@@ -408,14 +437,14 @@ def ask_question_stream(
                         continue
                     if event.get("type") == "meta":
                         metadata["conversation_id"] = event.get("conversation_id")
-                    elif event.get("type") == "token":
-                        yield event["content"]
-                    elif event.get("type") == "done":
                         metadata["sources"] = event.get("sources", [])
-                        metadata["confidence"] = event.get("confidence", {})
                         metadata["rewritten_query"] = event.get("rewritten_query")
+                    elif event.get("type") == "token":
+                        yield event.get("text", "")
+                    elif event.get("type") == "done":
+                        metadata["confidence"] = event.get("confidence", {})
                     elif event.get("type") == "error":
-                        yield f"\n\n**{event['message']}**"
+                        yield f"\n\n**{event.get('message', '未知错误')}**"
         except RequestException as e:
             yield f"\n\n**{_handle_api_error(e)}**"
 
@@ -481,27 +510,24 @@ def set_item_category_api(api_base: str, item_type: str, item_name: str, categor
 def render_sources(sources: list[dict], conv_id: str | None = None):
     if not sources:
         return
-    with st.expander(f"查看溯源条文 ({len(sources)} 条)"):
-        for i, src in enumerate(sources, 1):
-            col_info, col_fav = st.columns([5, 1])
-            with col_info:
-                conf_color = "green" if src["score"] > 0.7 else "orange" if src["score"] > 0.4 else "red"
-                st.markdown(
-                    f"**[{i}] [{src['source']} {src['article_num']}]** "
-                    f":{conf_color}[{src['score']:.2%}]"
+    st.markdown(f"**溯源条文 ({len(sources)} 条)**")
+    for i, src in enumerate(sources, 1):
+        conf_color = "green" if src["score"] > 0.7 else "orange" if src["score"] > 0.4 else "red"
+        st.markdown(
+            f"**[{i}] [{src['source']} {src['article_num']}]** "
+            f":{conf_color}[{src['score']:.2%}]"
+        )
+        st.text(src["text"][:300] + "..." if len(src["text"]) > 300 else src["text"])
+        if st.session_state.api_ok:
+            if st.button("⭐ 收藏此条文", key=f"fav_src_{i}", help="收藏此条文"):
+                result = add_favorite_api(
+                    st.session_state.api_base_url, "source", conv_id, src
                 )
-                st.text(src["text"][:200] + "..." if len(src["text"]) > 200 else src["text"])
-            with col_fav:
-                if st.session_state.api_ok:
-                    if st.button("⭐", key=f"fav_src_{i}", help="收藏此条文"):
-                        result = add_favorite_api(
-                            st.session_state.api_base_url, "source", conv_id, src
-                        )
-                        if result:
-                            st.toast("已收藏", icon="⭐")
-                            st.session_state.favorites_list = None
-            if i < len(sources):
-                st.divider()
+                if result:
+                    st.toast("已收藏", icon="⭐")
+                    st.session_state.favorites_list = None
+        if i < len(sources):
+            st.divider()
 
 
 def render_confidence(conf: dict):
@@ -604,6 +630,19 @@ def render_mermaid(mermaid_str: str, height: int = 600):
 
 # ===== 对话历史 & 收藏 Helper =====
 
+def _safe_parse(val):
+    """安全解析 JSON 字段：已经是 dict/list 则直接返回，字符串则 json.loads。"""
+    if val is None:
+        return None
+    if isinstance(val, (dict, list)):
+        return val
+    if isinstance(val, str):
+        try:
+            return json.loads(val)
+        except (json.JSONDecodeError, TypeError):
+            return None
+    return val
+
 def fetch_conversations(api_base: str) -> list[dict]:
     try:
         resp = requests.get(f"{api_base}/api/conversations", timeout=10)
@@ -665,7 +704,27 @@ def delete_favorite(api_base: str, fav_id: str) -> bool:
 
 # ====================================================================
 
+# 页面加载时立即执行健康检查
+import time as _time_init
+_now_init = _time_init.time()
+if st.session_state.api_ok is None or (_now_init - st.session_state.last_health_check) > 10:
+    st.session_state.api_ok = check_api_health(st.session_state.api_base_url)
+    st.session_state.last_health_check = _now_init
+
 api_base = st.session_state.api_base_url
+
+# API 在线时预加载对话历史和收藏（避免首次加载需要手动刷新）
+if st.session_state.api_ok:
+    if not st.session_state.conversation_list:
+        try:
+            st.session_state.conversation_list = fetch_conversations(api_base)
+        except Exception:
+            st.session_state.conversation_list = []
+    if st.session_state.favorites_list is None:
+        try:
+            st.session_state.favorites_list = fetch_favorites(api_base)
+        except Exception:
+            st.session_state.favorites_list = []
 
 # ---- 顶部栏：标题 + 齿轮 ----
 col_title, col_gear = st.columns([0.92, 0.08])
@@ -680,8 +739,8 @@ with col_gear:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ---- 标签页 ----
-tab_qa, tab_relations, tab_categories, tab_flowchart = st.tabs(
-    ["智能问答", "条文关联查询", "标签分类管理", "流程图生成"]
+tab_qa, tab_relations, tab_categories, tab_flowchart, tab_favorites = st.tabs(
+    ["智能问答", "条文关联查询", "标签分类管理", "流程图生成", "我的收藏"]
 )
 
 # JS 编程式切换标签页（在收藏中点击跳转时使用）
@@ -728,8 +787,8 @@ with tab_qa:
                                     "content": m["content"],
                                     "question": m.get("question"),
                                     "rewritten_query": m.get("rewritten_query"),
-                                    "sources": m.get("sources"),
-                                    "confidence": m.get("confidence"),
+                                    "sources": _safe_parse(m.get("sources")),
+                                    "confidence": _safe_parse(m.get("confidence")),
                                 })
                             st.rerun()
                 with c2:
@@ -793,9 +852,26 @@ with tab_qa:
 
                 if rewritten and rewritten != _q and rewritten != answer:
                     st.caption(f"已改写查询: {rewritten}")
-                render_sources(sources, st.session_state.conversation_id)
                 if confidence:
                     render_confidence(confidence)
+                render_sources(sources, st.session_state.conversation_id)
+
+                if st.session_state.api_ok and st.session_state.conversation_id:
+                    st.divider()
+                    col_fav1, col_fav2 = st.columns(2)
+                    with col_fav1:
+                        if st.button("⭐ 收藏对话", key="fav_conversation", 
+                                   help="收藏此对话", use_container_width=True):
+                            result = add_favorite_api(
+                                api_base, "conversation", st.session_state.conversation_id
+                            )
+                            if result:
+                                st.toast("对话已收藏", icon="⭐")
+                                st.session_state.favorites_list = None
+                    with col_fav2:
+                        if st.button("📋 复制回答", key="copy_answer", 
+                                   help="复制回答到剪贴板", use_container_width=True):
+                            st.toast("已复制到剪贴板", icon="📋")
 
                 st.session_state.messages.append({
                     "role": "assistant",
@@ -1167,6 +1243,88 @@ with tab_flowchart:
     elif not error:
         st.info("请上传图片或输入文本，点击 生成流程图 开始")
 
+# Tab 5: 我的收藏
+with tab_favorites:
+    st.markdown("### 我的收藏")
+    st.caption("管理收藏的对话和条文")
+
+    if not st.session_state.api_ok:
+        st.warning("API 未连接，无法加载收藏")
+    else:
+        if st.session_state.favorites_list is None:
+            st.session_state.favorites_list = fetch_favorites(api_base)
+        favs = st.session_state.favorites_list
+
+        if not favs:
+            st.info("暂无收藏内容。在智能问答中点击 ⭐ 收藏对话或条文。")
+        else:
+            col_type, col_refresh = st.columns([3, 1])
+            with col_type:
+                fav_filter = st.selectbox(
+                    "筛选类型", ["全部", "对话", "条文"], key="fav_filter_select"
+                )
+            with col_refresh:
+                if st.button("🔄 刷新", key="refresh_favs"):
+                    st.session_state.favorites_list = None
+                    st.rerun()
+
+            filter_map = {"全部": None, "对话": "conversation", "条文": "source"}
+            filtered_type = filter_map.get(fav_filter)
+
+            display_favs = [f for f in favs if filtered_type is None or f["fav_type"] == filtered_type]
+
+            if not display_favs:
+                st.info(f"没有{fav_filter}类型的收藏")
+            else:
+                for fav in display_favs:
+                    with st.container():
+                        c1, c2 = st.columns([5, 1])
+                        with c1:
+                            if fav["fav_type"] == "conversation":
+                                conv_title = fav.get("conversation_id", "")[:12] or "对话"
+                                st.markdown(f"💬 **对话** - `{conv_title}...`")
+                                st.caption(f"收藏时间: {fav.get('created_at', '未知')}")
+                                if st.button("查看对话", key=f"view_conv_{fav['id']}", use_container_width=True):
+                                    detail = fetch_conversation_detail(api_base, fav["conversation_id"])
+                                    if detail:
+                                        st.session_state.conversation_id = fav["conversation_id"]
+                                        st.session_state.messages = []
+                                        for m in detail.get("messages", []):
+                                            st.session_state.messages.append({
+                                                "role": m["role"],
+                                                "content": m["content"],
+                                                "question": m.get("question"),
+                                                "rewritten_query": m.get("rewritten_query"),
+                                                "sources": _safe_parse(m.get("sources")),
+                                                "confidence": _safe_parse(m.get("confidence")),
+                                            })
+                                        st.session_state.jump_to_tab = 0
+                                        st.rerun()
+                            elif fav["fav_type"] == "source":
+                                data = fav.get("source_data")
+                                if isinstance(data, str):
+                                    try:
+                                        data = json.loads(data)
+                                    except Exception:
+                                        data = {}
+                                source_name = data.get("source", "未知") if data else "未知"
+                                article_num = data.get("article_num", "") if data else ""
+                                st.markdown(f"📌 **条文** - {source_name} {article_num}")
+                                st.caption(f"收藏时间: {fav.get('created_at', '未知')}")
+                                if data:
+                                    st.text(data.get("text", "")[:150] + "..." if len(data.get("text", "")) > 150 else data.get("text", ""))
+                                if st.button("查看条文", key=f"view_src_{fav['id']}", use_container_width=True):
+                                    st.session_state.jump_law_name = data.get("source", "") if data else ""
+                                    st.session_state.jump_article_num = data.get("article_num", "") if data else ""
+                                    st.session_state.jump_to_tab = 1
+                                    st.rerun()
+                        with c2:
+                            if st.button("❌", key=f"del_fav_{fav['id']}", help="取消收藏"):
+                                delete_favorite(api_base, fav["id"])
+                                st.session_state.favorites_list = None
+                                st.rerun()
+                        st.divider()
+
 # ---- 设置面板（点击齿轮后展开在页面底部） ----
 if st.session_state.settings_open:
     st.markdown('<div class="settings-panel">', unsafe_allow_html=True)
@@ -1281,8 +1439,8 @@ if st.session_state.settings_open:
                                         "content": m["content"],
                                         "question": m.get("question"),
                                         "rewritten_query": m.get("rewritten_query"),
-                                        "sources": m.get("sources"),
-                                        "confidence": m.get("confidence"),
+                                        "sources": _safe_parse(m.get("sources")),
+                                        "confidence": _safe_parse(m.get("confidence")),
                                     })
                                 st.session_state.jump_to_tab = 0
                                 st.session_state.favorites_list = None
@@ -1341,11 +1499,6 @@ if st.session_state.settings_open:
     st.markdown('</div>', unsafe_allow_html=True)
 else:
     # 设置关闭时保持默认值
-    import time as _time2
-    _now2 = _time2.time()
-    if st.session_state.api_ok is None or (_now2 - st.session_state.last_health_check) > 10:
-        st.session_state.api_ok = check_api_health(api_base)
-        st.session_state.last_health_check = _now2
     st.session_state.use_reranker = st.session_state.get("use_reranker", True)
     st.session_state.use_query_rewrite = st.session_state.get("use_query_rewrite", True)
     st.session_state.mode = st.session_state.get("mode", "全部")
