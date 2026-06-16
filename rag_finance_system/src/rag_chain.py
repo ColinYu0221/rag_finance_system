@@ -394,7 +394,7 @@ class RAGChain:
             except Exception as e:
                 logger.warning(f"图谱扩展失败: {e}")
 
-        # 2. 检索（默认只返回有效版本，include_historical=True 展开全部）
+        # 2. 检索（默认只看有效版本，0 结果时回退不过滤 status）
         status_filter = None if include_historical else "有效"
         chunks = self.retriever.retrieve(
             query=rewritten_query,
@@ -406,6 +406,23 @@ class RAGChain:
             authority_filter=authority_filter,
             status_filter=status_filter,
         )
+        if not chunks and status_filter:
+            # status 过滤导致 0 召回（例如 other 类文档无 status 字段）→ 去掉过滤重试
+            logger.warning(f"status_filter={status_filter} 无结果，回退无 status 过滤")
+            status_filter = None
+            chunks = self.retriever.retrieve(
+                query=rewritten_query, top_k=top_k, use_reranker=use_reranker,
+                source_filter=None, doc_type_filter=doc_type_filter,
+                law_name_filter=None, authority_filter=None, status_filter=None,
+            )
+        if not chunks and (law_name_filter or authority_filter):
+            # 内容过滤导致 0 召回（如词典检测到"国家金融监督管理总局"但库内是"上海银保监局"）
+            logger.warning(f"内容过滤导致 0 召回，回退无过滤检索")
+            chunks = self.retriever.retrieve(
+                query=rewritten_query, top_k=top_k, use_reranker=use_reranker,
+                source_filter=None, doc_type_filter=doc_type_filter,
+                law_name_filter=None, authority_filter=None, status_filter=None,
+            )
         # 2b. 合并图谱扩展结果到检索结果后（图谱结果排在后，不参与reranker评分）
         seen_chunk_ids = {c.get("chunk_id", "") for c in chunks}
         for ga in graph_articles:
@@ -493,15 +510,16 @@ class RAGChain:
             if use_query_expansion and entities["terms"]:
                 expanded_query = self.dictionary.expand_query(rewritten_query)
 
-        source_filter = self._detect_source(question)
-        if source_filter:
-            law_name_filter = None
-            authority_filter = None
-        else:
-            if not law_name_filter:
-                law_name_filter = self._detect_law_name(question)
-            if not authority_filter:
-                authority_filter = self._detect_authority(question)
+        detected_source = self._detect_source(question)
+        source_filter = None  # 硬过滤改为查询增强
+
+        if detected_source:
+            expanded_query = f"{expanded_query} {detected_source}"
+
+        if not law_name_filter:
+            law_name_filter = self._detect_law_name(question)
+        if not authority_filter:
+            authority_filter = self._detect_authority(question)
 
         # 知识图谱
         graph_articles: list[dict] = []
@@ -529,6 +547,19 @@ class RAGChain:
             law_name_filter=law_name_filter, authority_filter=authority_filter,
             status_filter=status_filter,
         )
+        if not chunks and status_filter:
+            status_filter = None
+            chunks = self.retriever.retrieve(
+                query=rewritten_query, top_k=top_k, use_reranker=use_reranker,
+                source_filter=None, doc_type_filter=doc_type_filter,
+                law_name_filter=None, authority_filter=None, status_filter=None,
+            )
+        if not chunks and (law_name_filter or authority_filter):
+            chunks = self.retriever.retrieve(
+                query=rewritten_query, top_k=top_k, use_reranker=use_reranker,
+                source_filter=None, doc_type_filter=doc_type_filter,
+                law_name_filter=None, authority_filter=None, status_filter=None,
+            )
 
         # 图谱条文补充到上下文
         if graph_articles:
